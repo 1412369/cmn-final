@@ -5,6 +5,7 @@ class Locate extends Root {
         super(collection)
         
     }
+    
     static GetCollection(){
         return new Locate('locates')
     }

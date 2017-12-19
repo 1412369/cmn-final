@@ -24,12 +24,6 @@ app.use("/drivers", driver)
 app.use("/users", user)
 
 app.get("/", (req, res, next) => {
-
-    MongoClient.connect("mongodb://localhost:27017", function (err, db) {
-        console.log("db",db)
-        const mydb = db.db('barg')
-        mydb.createCollection("test123");
-    });
     res.send("this is API server!")
 })
 app.listen(8080, (err) => {

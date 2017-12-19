@@ -5,6 +5,7 @@ class Driver extends Root {
         super(collection)
         
     }
+    
     static GetCollection(){
         return new Driver('drivers')
     }

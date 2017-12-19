@@ -3,7 +3,7 @@ const axios = require('axios')
 const router = express.Router()
 const MongoClient = require('mongodb').MongoClient
 const url = "mongodb://localhost:27017"
-
+const Promise = require('bluebird')
 
 // const CreateCollection = (collection, callback) => {
 //     MongoClient.connect(url, (err, db) => {
@@ -48,37 +48,58 @@ class Root {
             return callback(null, client)
         })
     }
-    find(params, query, callback) {
-        this.ConnectDB((err, client) => {
+    find(params, query) {
+        const d = Promise.defer()
+        ConnectDB((err, client) => {
+            if (err) throw err
             const db = client.db(this.dbName)
             db.collection(this.collection).find(params, query == null ? {} : query).toArray((err, data) => {
-                if (err) callback(err, null)
-                else callback(null, data)
+                err ? d.reject(err) :
+                    d.resolve(data)
                 client.close()
             })
         })
+        return d.promise;
     }
     insert(params, callback) {
+        const d = Promise.defer()
         params = this.BeforeInsert(params)
         ConnectDB((err, client) => {
+            if (err) throw err
             const db = client.db(this.dbName)
             db.collection(this.collection).insert(params, (err, data) => {
-                if (err) callback(err, null)
-                else callback(null, data)
+                err ? d.reject(err) :
+                    d.resolve(data)
+                client.close()
+            })
+        })
+        return d.promise;
+    }
+    update(params, query) {
+        const d = Promise.defer()
+        params = this.BeforeUpdate(params)
+        ConnectDB((err, client) => {
+            if (err) throw err
+            const db = client.db(this.dbName)
+            db.collection(this.collection).update(params, query, (err, data) => {
+                err ? d.reject(err) :
+                    d.resolve(data)
                 client.close()
             })
         })
     }
-    update(params, query, callback) {
-        params = this.BeforeUpdate(params)
+    findOne(params) {
+        const d = Promise.defer()
         ConnectDB((err, client) => {
-            const db= client.db(this.dbName)
-            db.collection(this.collection).update(params, query, (err, data) => {
-                if (err) callback(err, null)
-                else callback(null, data)
-                db.close()
+            if (err) throw err
+            const db = client.db(this.dbName)
+            db.collection(this.collection).findOne(params, (err, data) => {
+                err ? d.reject(err) :
+                    d.resolve(data)
+                client.close()
             })
         })
+        return d.promise;
     }
 }
 module.exports = Root
