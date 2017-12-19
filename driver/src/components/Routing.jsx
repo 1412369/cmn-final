@@ -4,7 +4,7 @@ import CSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
 import { withRouter } from 'react-router-dom';
 import { Link, Route, Switch } from 'react-router-dom';
 import { Button, Drawer, Toolbar } from 'react-md';
-import { Home, About, CallHistory, Login, Profile } from './'
+import { Home, About, CallHistory, Login, Profile,Register } from './'
 import NavItemLink from './NavItemLink'
 const navItems = [{
   label: 'Home',
@@ -33,13 +33,22 @@ class Routing extends PureComponent {
   static propTypes = {
     location: PropTypes.object.isRequired,
   };
-  state = { visible: false };
+  constructor() {
+    super()
+    this.state = {
+      visible: false,
+      isLogged: false
+    }
+    this.changeStatus = this.changeStatus.bind(this)
+  }
 
   componentDidMount() {
     // Need to set the renderNode since the drawer uses an overlay
+    const isLogged = localStorage.getItem('isLogged')
+    if (isLogged === 'true') this.setState(...this.state, { isLogged })
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
-
+  changeStatus(status) { this.setState(...this.state, { isLogged: status }) }
   showDrawer = () => {
     this.setState({ visible: true });
   };
@@ -54,25 +63,29 @@ class Routing extends PureComponent {
 
   render() {
     const { location } = this.props;
-    const { visible } = this.state;
+    const { visible, isLogged } = this.state;
     return (
       <div>
-        {/* <Toolbar colored fixed title="Đăng nhập" /> */}
-        
-        <Toolbar colored fixed title="Login as driver" nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+        {
+          !isLogged? <Toolbar colored fixed title="Đăng nhập" />:
+          
+          <Toolbar colored fixed title={`Hello ${localStorage.getItem("current_user")}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+        }
+
         <CSSTransitionGroup
           component="div"
           transitionName="md-cross-fade"
-          transitionEnterTimeout={0}
+          transitionEnterTimeout={100}
           transitionLeave={false}
         >
-          <Switch key={location.pathname}>
-            {
-                navItems.map(({ to, component, exact }) => { 
-                 return <Route key={to} path={to} exact={!!exact}  component={component}  /> 
-              })
-            }
-          </Switch>
+          <div style={{ marginTop: "64px" }}>
+            <Switch key={location.pathname}>
+              <Route path='/' exact render={() => <Home isLogged={isLogged} {...this.props} changeStatus={this.changeStatus} />} />
+              <Route path='/register' component={Register} />
+              <Route path='/history' render={() => <CallHistory isLogged={isLogged} {...this.props} changeStatus={this.changeStatus} />} />
+              <Route path='/about' render={() => <About isLogged={isLogged} {...this.props} changeStatus={this.changeStatus} />} />
+            </Switch>
+          </div>
         </CSSTransitionGroup>
         <Drawer
           type={Drawer.DrawerTypes.TEMPORARY}

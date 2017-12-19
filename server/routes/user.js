@@ -31,12 +31,14 @@ class User extends Root {
         let current_user={}
         const {
             email,
-            password
+            password,
+            role
         } = params
         if (!validate.isEmail(email)) return this.HandleErr(res,400,"Wrong email type!")
         if (!password) return this.HandleErr(res,400,"Wrong password!")
         Model.User.findOne({
-                "email": email
+                "email": email,
+                "role":role
             })
             .then(result => {
                 !result && this.HandleErr(res,400,"User not found!")
