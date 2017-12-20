@@ -9,7 +9,7 @@ import {
   SearchBox,
   InfoWindow, Circle, DirectionsRenderer
 } from "react-google-maps"
-import { compose, withProps, lifecycle } from 'recompose'
+import { compose, withProps } from 'recompose'
 
 class Map extends React.Component {
   constructor() {
