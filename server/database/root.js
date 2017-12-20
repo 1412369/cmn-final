@@ -35,7 +35,7 @@ class Root {
         this.dbName = "barg"
     }
     BeforeUpdate(fields) {
-        if (!fileds['modified']) fields['modified'] = new Date()
+        fields.$set['modified'] = new Date()
         return fields
     }
     BeforeInsert(fields) {
@@ -61,7 +61,7 @@ class Root {
         })
         return d.promise;
     }
-    insert(params, callback) {
+    insert(params) {
         const d = Promise.defer()
         params = this.BeforeInsert(params)
         ConnectDB((err, client) => {
@@ -75,31 +75,39 @@ class Root {
         })
         return d.promise;
     }
-    update(params, query) {
+    modified(params, query) {
         const d = Promise.defer()
-        params = this.BeforeUpdate(params)
+        query = this.BeforeUpdate(query)
         ConnectDB((err, client) => {
             if (err) throw err
             const db = client.db(this.dbName)
-            db.collection(this.collection).update(params, query, (err, data) => {
+            db.collection(this.collection).findAndModify(params, [
+                ["_id", "desc"]
+            ], query, {
+                safe: 1,
+                'new': 1
+            }, (err, data) => {
                 err ? d.reject(err) :
-                    d.resolve(data)
+                    d.resolve(data.value)
                 client.close()
             })
         })
+        return d.promise
     }
     findOne(params) {
         const d = Promise.defer()
+        console.log("parmas",params)
         ConnectDB((err, client) => {
             if (err) throw err
             const db = client.db(this.dbName)
-            db.collection(this.collection).findOne(params, (err, data) => {
+            db.collection(this.collection).findOne(params, null, (err, data) => {
+                console.log(err,data)
                 err ? d.reject(err) :
                     d.resolve(data)
                 client.close()
             })
         })
-        return d.promise;
+    return d.promise
     }
 }
 module.exports = Root

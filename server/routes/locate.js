@@ -1,58 +1,74 @@
 const Root = require('./root')
-const Model= require('../database')
-
-class Locate extends Root{
-    constructor(){
+const Model = require('../database')
+const {
+    Locate_Status
+} = require('../config')
+class Locate extends Root {
+    constructor() {
         super()
-        this.router.get('/',this.CheckStatus.bind(this))
-        this.router.post('/login', this.Login.bind(this))
-        this.router.post('/register', this.Register.bind(this))
+        this.router.get('/', this.CheckStatus.bind(this))
+        this.router.post('/address', this.PostAddress.bind(this))
+        this.router.get('/address', this.GetAddress.bind(this))
+
         return this.router
     }
-    CheckStatus(req,res,next){
-        Model.Locate.check((err,result)=>{
-            if(err) throw err
+    CheckStatus(req, res, next) {
+        Model.Locate.check((err, result) => {
+            if (err) throw err
             res.send("locate connect success!")
         })
     }
-    Login(req,res,next){
-        const params= req.body
-        const {email,password} = params
-        if(!validate.isEmail(email))  throw Error("Wrong email type!")
-        if(!password) throw Error("Invalid password!")
-        Model.User.findOne({"email":email,role:"locate"})
-        .then(result=>{
-            return comparePassword(password,result.password)
-        })
-        .then(match=>{
-            match ? res.send("login success!") : res.send("login failure!")
-            
-        })
-        .catch(err=>{
-            throw err
-        })
+    GetAddress(req, res, next) {
+        const accesstoken = req.headers['x-accesstoken']
+        if (!accesstoken)
+            return this.HandleErr(res, 403, "Not authenticated")
+        let me = {}
+        this.IsAccessTokenBelong(res, accesstoken, "locate")
+            .then(user => {
+                me = user
+                return Model.Locate.findOne({
+                    status: Locate_Status.NEW,
+                    locator:null
+                })
+            })
+            .then(result => {
+                if (result) {
+                    const updated = {
+                        $set: {
+                            locator: me.email
+                        }
+                    }
+                    return Model.Locate.modified({
+                        _id: result._id
+                    }, updated)
+                }
+            })
+            .then(result=>{
+                if(!result) return this.HandleResult(res,204, "")
+                this.HandleResult(res,200,result)
+            })
+            .catch(err => {
+                throw err
+            })
+
     }
-    Register(req,res,next){
-        const params = req.body
-        const {email,password} = params
-        if(!validate.isEmail(email))  throw Error("Wrong email type!")
-        params.role="locate"
-        cryptPassword(password)
-        .then(result=>{
-            params.password = result
-            console.log(params)
-            return Model.User.insert(params)
-        })
-        .then(result=>{
-            res.send(result.ops[0])
-        })
-        .catch(err=>{
-            throw err
-        })
-        
-       
+    PostAddress(req, res, next) {
+        const address = req.body
+        const accesstoken = req.headers['x-accesstoken']
+        this.IsAccessTokenBelong(res, accesstoken, "phone")
+            .then(user => {
+                return Model.Locate.insert(address)
+            })
+            .then(result => {
+                result ? this.HandleResult(res, 201, result.ops[0]) :
+                    this.HandleErr(res, 400, "Insert fail")
+            })
+            .catch(err => {
+                console.error(err)
+                throw err
+            })
     }
-    static GetRouter(){
+    static GetRouter() {
         return new Locate()
     }
 }
