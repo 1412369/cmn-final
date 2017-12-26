@@ -80,10 +80,10 @@ class Home extends React.PureComponent {
     }
 
     render() {
-        const {isLogged,changeStatus} = this.props
+        const {isLogged} = this.props
         return (
             <div>
-                {isLogged ? <MainActivity /> : <Login {...this.props.location} changeStatus={changeStatus}/>}
+                {isLogged ? <MainActivity {...this.props}/> : <Login {...this.props}/>}
                 <Notification
                     ignore={this.state.ignore && this.state.title !== ''}
                     notSupported={this.handleNotSupported.bind(this)}

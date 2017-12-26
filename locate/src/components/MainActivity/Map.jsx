@@ -10,20 +10,62 @@ import {
   InfoWindow, Circle, DirectionsRenderer
 } from "react-google-maps"
 import { compose, withProps } from 'recompose'
+import { UpdateLocation } from './api.js'
 
+const generateMaker = (drivers, onDragEnd) =>
+  drivers.map(({ location, _id }, index) => {
+    return <Marker
+      key={index}
+      position={location}
+      defaultVisible={true}
+      icon={{
+        url: '/bike.png',
+        scaledSize: new google.maps.Size(50, 50)
+      }}
+      draggable={true}
+      onDragEnd={onDragEnd(_id)}
+    />
+  })
 class Map extends React.Component {
   constructor() {
     super()
     this.state = {
+      address: "227 nguyen van cu",
       center: {},
+      map: null
+    }
+    this.geocodeAddress = this.geocodeAddress.bind(this)
+    this.updateDriverPosition = this.updateDriverPosition.bind(this)
+    this.filterDriversWithRadius = this.filterDriversWithRadius.bind(this)
+  }
+  componentWillReceiveProps(nextProps) {
+    const address = nextProps.location && nextProps.location.address
+    const drivers = nextProps.drivers && nextProps.drivers
+    if (address != this.state.address) {
+      this.geocodeAddress(address)
     }
   }
-  componentDidMount() {
-    const DirectionsService = new google.maps.DirectionsService();
-
+  geocodeAddress(address) {
     const geocoder = new google.maps.Geocoder()
     geocoder.geocode({
-      'address': '150 bau cat'
+      'address': address
+    }, (results, status) => {
+      if (status === 'OK') {
+        console.log(results)
+        this.setState({
+          ...this.state,
+          center: results[0].geometry.location,
+          address: address
+        })
+      }
+    })
+  }
+  componentDidMount() {
+    const { address } = this.state
+    const { drivers } = this.props
+    const geocoder = new google.maps.Geocoder()
+    geocoder.geocode({
+      'address': address
     }, (results, status) => {
       if (status === 'OK') {
         console.log(results)
@@ -47,31 +89,86 @@ class Map extends React.Component {
     //   }
     // });
   }
+  filterDriversWithRadius(radius) {
+    let { drivers } = this.props
+    let { center } = this.state
+    let driver = "", distance = 0
+    for (let index in drivers) {
+      driver = new google.maps.LatLng({...drivers[index].location})
+      let distance = google.maps.geometry.spherical.computeDistanceBetween(driver, center).toFixed(2)
+    }
+  }
+  updateDriverPosition(marker, id) {
+    console.log("92", JSON.stringify(marker.latLng), marker)
+    const location = JSON.stringify(marker.latLng)
+    console.log("location", location)
+    this.filterDriversWithRadius(500)
+    UpdateLocation(location, id)
+      .then(response => {
+        this.props.fetchDriver()
+      })
+      .catch(err => {
+        throw err
+      })
+  }
+  onMapLoad(map) {
+    if (this.state.map === null) {
+      this.setState({
+        ...this.state,
+        map
+      })
+    }
+  }
+  onBoundsChanged() {
+    const { map, center } = this.state
+  }
   render() {
-    const { center } = this.state
+    const { center, address } = this.state
+    const { drivers } = this.props
     return (
       <div>
         {
           Object.keys(center).length > 0 ?
             <GoogleMap
               defaultZoom={15}
-              defaultCenter={center}
+              center={center}
+              onBoundsChanged={this.onBoundsChanged.bind(this)}
+              ref={this.onMapLoad.bind(this)}
             >
               <Circle
                 center={center}
                 radius={1000}
               />
+              {
+                drivers.length > 0 ?
+                  drivers.map(({ location, _id }) => {
+                    return <Marker
+                      key={_id}
+                      position={location}
+                      defaultVisible={true}
+                      name="name"
+                      icon={{
+                        url: '/bike.png',
+                        scaledSize: new google.maps.Size(50, 50)
+                      }}
+                      draggable={true}
+                      onDragEnd={(marker) => {
+                        this.updateDriverPosition(marker, _id)
+                      }}
+                    />
+                  })
+                  : ""
+              }
               {/* <DirectionsRenderer directions={props.directions} /> */}
               <Marker
                 position={center}
-                onClick={this.props.onMarkerClick}
                 defaultVisible={true}
-                // icon={{
-                //   url: 'image/user.png',
-                //   scaledSize: new google.maps.Size(30, 30)
-                // }}
+              // icon={{
+              //   url: 'image/user.png',
+              //   scaledSize: new google.maps.Size(30, 30)
+              // }}
               >
-                <InfoWindow ><div>this is infor</div></InfoWindow>
+                <InfoWindow><div>{address}</div></InfoWindow>
               </Marker>
             </GoogleMap >
             : <h2>Loading</h2>

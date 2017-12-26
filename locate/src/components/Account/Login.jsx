@@ -2,6 +2,7 @@ import React from 'react';
 import { Grid, Cell, TextField, Button, Avatar } from 'react-md'
 import { Link } from 'react-router-dom'
 import * as API from './api.js'
+import {Client} from '../Config/config.js'
 const style = {
     marginTop: "100px"
 }
@@ -27,8 +28,7 @@ class Login extends React.Component {
     }
     componentDidMount() {
         if (this.props.state) {
-            console.log(this.props.state)
-            const { from, email, password } = this.props.state
+            const { from, email, password } = this.props.state.location
             if (from === "register") {
                 this.setState(...this.state, { email, password })
             }
@@ -42,13 +42,16 @@ class Login extends React.Component {
     }
     onSubmit() {
         const { email, password } = this.state
+        const {socket} = this.props
         API.Login(email, password)
             .then(response => {
                 const { data } = response
                 if (data.status === 200) {
                     localStorage.setItem("token", data.message.token)
-                    localStorage.setItem("current_user",data.message.user)
+                    localStorage.setItem("user",JSON.stringify(data.message))
                     localStorage.setItem("isLogged", "true")
+                    data.message
+                    socket.emit(Client.DRIVER,data.message.email)
                     this.props.changeStatus(true)
                 }
             })

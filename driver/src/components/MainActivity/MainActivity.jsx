@@ -1,71 +1,45 @@
 import React from 'react';
 import MyMapComponent from './Map'
 import {
-    Grid, Cell, ExpansionPanel,
-    ExpansionList, TabsContainer, Tabs, Tab
+    Grid, Cell, ExpansionPanel, Paper, TextField, FontIcon,
+    ExpansionList, TabsContainer, Tabs, Tab, Button
 } from 'react-md'
-
+import LeftActivity from './LeftActivity'
+import { Socket } from '../Config/config.js'
+import {GetDrivers} from './api.js'
 class MainActivity extends React.PureComponent {
-    state = {
-        isMarkerShown: false,
-    }
+    constructor() {
+        super()
+        this.state = {
+            location: {},
+            drivers:[],
 
+        }
+    }
+    onExpandToggle(expanded) {
+        console.log(expanded)
+    }
     componentDidMount() {
-        this.delayedShowMarker()
-    }
-
-    delayedShowMarker = () => {
-        setTimeout(() => {
-            this.setState({ isMarkerShown: true })
-        }, 3000)
-    }
-
-    handleMarkerClick = () => {
-        this.setState({ isMarkerShown: false })
-        this.delayedShowMarker()
+        const { socket } = this.props
+        GetDrivers().then(response=>{
+            const drivers = response.data.message
+            this.setState({...this.state,drivers})
+        })
+        socket.on(Socket.Phone.NEW_ADDRESS, (address) => {
+            this.setState({ ...this.state, location: address })
+        })
     }
 
     render() {
+        const compress = { ...this.state, ...this.props }
         return (
             <Grid style={{ padding: "0px", margin: "0px" }} className="force-overflow">
                 <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} className="scrollbar" id="style-1">
-                        <ExpansionList>
-                            <ExpansionPanel
-                                label="Lý Thành Nhân!"
-                                secondaryLabel="183 227 Nguyễn Văn Cừ"
-                            >
-                                <div>'Xe thượng hạng trai đẹp 6  múi'</div>
-                            </ExpansionPanel>
-                            <ExpansionPanel
-                                label="Lý Thành Nhân!"
-                                secondaryLabel="183 227 Nguyễn Văn Cừ"
-                            >
-                                <div>'Xe thượng hạng trai đẹp 6  múi'</div>
-                            </ExpansionPanel>
-                            <ExpansionPanel
-                                label="Lý Thành Nhân!"
-                                secondaryLabel="183 227 Nguyễn Văn Cừ"
-                            >
-                                <div>'Xe thượng hạng trai đẹp 6  múi'</div>
-                            </ExpansionPanel>
-                            <ExpansionPanel
-                                label="Lý Thành Nhân!"
-                                secondaryLabel="183 227 Nguyễn Văn Cừ"
-                            >
-                                <div>'Xe thượng hạng trai đẹp 6  múi'</div>
-                            </ExpansionPanel>
-                            <ExpansionPanel
-                                label="Lý Thành Nhân!"
-                                secondaryLabel="183 227 Nguyễn Văn Cừ"
-                            >
-                                <div>'Xe thượng hạng trai đẹp 6  múi'</div>
-                            </ExpansionPanel>
-                        </ExpansionList>
+                    <LeftActivity {...this.state}/>
                 </Cell>
                 <Cell size={8} style={{ padding: "0px", margin: "0px" }}>
                     <MyMapComponent
-                        isMarkerShown={this.state.isMarkerShown}
-                        onMarkerClick={this.handleMarkerClick}
+                        {...this.state}
                     />
                 </Cell>
             </Grid >

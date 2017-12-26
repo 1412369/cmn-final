@@ -1,9 +1,12 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
+import io from 'socket.io-client'
+import { Client } from './Config/config.js'
 import CSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
 import { withRouter } from 'react-router-dom';
 import { Link, Route, Switch } from 'react-router-dom';
 import { Button, Drawer, Toolbar } from 'react-md';
+import { GetMe } from './api.js'
 import { Home, About, CallHistory, Login, Profile, Register } from './'
 import NavItemLink from './NavItemLink'
 const navItems = [{
@@ -35,7 +38,8 @@ class Routing extends PureComponent {
     super()
     this.state = {
       visible: false,
-      isLogged: false
+      isLogged: false,
+      socket: null
     }
     this.changeStatus = this.changeStatus.bind(this)
   }
@@ -43,7 +47,22 @@ class Routing extends PureComponent {
   componentDidMount() {
     // Need to set the renderNode since the drawer uses an overlay
     const isLogged = localStorage.getItem('isLogged')
-    if (isLogged === 'true') this.setState(...this.state, { isLogged })
+    const socket = io.connect('http://localhost:8000')
+    if (isLogged === 'true') {
+      GetMe(localStorage.getItem('token'))
+        .then(response => {
+          localStorage.setItem('user', JSON.stringify(response.data.message))
+          socket.emit(Client.PHONE, response.data.message.email)
+        })
+        .catch(err => {
+          throw err
+        })
+
+      this.setState(...this.state, { isLogged,socket })
+    }else{
+      this.setState(...this.state,{socket})
+    }
+    
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
   changeStatus(status) { this.setState(...this.state, { isLogged: status }) }
@@ -65,9 +84,9 @@ class Routing extends PureComponent {
     return (
       <div>
         {
-          !isLogged? <Toolbar colored fixed title="Đăng nhập" />:
-          
-          <Toolbar colored fixed title={`Hello ${localStorage.getItem("current_user")}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+          !isLogged ? <Toolbar colored fixed title="Đăng nhập" /> :
+
+            <Toolbar colored fixed title={`Hello ${localStorage.getItem("current_user")}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
         }
 
         <CSSTransitionGroup
@@ -78,10 +97,10 @@ class Routing extends PureComponent {
         >
           <div style={{ marginTop: "64px" }}>
             <Switch key={location.pathname}>
-              <Route path='/' exact render={() => <Home isLogged={isLogged} {...this.props} changeStatus={this.changeStatus} />} />
+              <Route path='/' exact render={() => <Home {...this.state} {...this.props} changeStatus={this.changeStatus} />} />
               <Route path='/register' component={Register} />
-              <Route path='/history' render={() => <CallHistory isLogged={isLogged} {...this.props} changeStatus={this.changeStatus} />} />
-              <Route path='/about' render={() => <About isLogged={isLogged} {...this.props} changeStatus={this.changeStatus} />} />
+              <Route path='/history' render={() => <CallHistory {...this.state} {...this.props} changeStatus={this.changeStatus} />} />
+              <Route path='/about' render={() => <About {...this.state} {...this.props} changeStatus={this.changeStatus} />} />
             </Switch>
           </div>
         </CSSTransitionGroup>

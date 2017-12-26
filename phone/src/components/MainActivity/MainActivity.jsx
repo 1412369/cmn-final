@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { Grid, Cell, Paper, TextField, Button, SelectField } from 'react-md'
+import {PostAddress} from './api.js'
+import {Socket} from '../Config/config.js'
 class MainActivity extends Component {
     constructor() {
         super()
@@ -11,10 +13,33 @@ class MainActivity extends Component {
             note: "",
         }
         this.onTextChange = this.onTextChange.bind(this)
+        this.onSubmit = this.onSubmit.bind(this)
+        this.onTypeChange = this.onTypeChange.bind(this)
+    }
+    onTypeChange(value, index, event){
+        this.setState({...this.state,type:value})
     }
     onTextChange(value, e) { this.setState({ ...this.state, [e.target.name]: value }) }
+    onSubmit(){
+        PostAddress(localStorage.getItem('token'),{...this.state})
+        .then(response=>{
+            const {socket} = this.props
+            socket.emit(Socket.Phone.NEW_ADDRESS,response.data.message)
+            this.setState({
+                address: "",
+                type: "",
+                phone: "",
+                name: "",
+                note: "",
+            })
+        })
+        .catch(err=>{
+            console.error(err)
+        })
+        
+    }
     render() {
-        const { phone, name, address, note } = this.state
+        const { phone, name, address, note,type } = this.state
         return (
             <Grid>
                 <Cell size={3}></Cell>
@@ -38,6 +63,9 @@ class MainActivity extends Component {
                                     label="Loại xe"
                                     placeholder="Chọn loại xe"
                                     block={true}
+                                    value={type}
+                                    name="type"
+                                    onChange={this.onTypeChange}                                    
                                     menuItems={["premium","normal"]}
                                     simplifiedMenu={true}
                                 />
@@ -77,7 +105,7 @@ class MainActivity extends Component {
                             <label htmlFor="">* bắt buộc</label>
                         </Grid>
                         <Grid>
-                            <Button raised primary swapTheming>Gửi</Button>
+                            <Button raised primary swapTheming onClick={this.onSubmit}>Gửi</Button>
                         </Grid>
                     </Paper>
                 </Cell>
