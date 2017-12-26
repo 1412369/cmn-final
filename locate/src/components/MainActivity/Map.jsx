@@ -38,8 +38,8 @@ class Map extends React.Component {
       filter_drivers_with_dist: [],
       geocoder: new google.maps.Geocoder(),
       closer_driver: null,
-      directionsService: new google.maps.DirectionsService,
-      directionsDisplay: new google.maps.DirectionsRenderer
+      direction: null,
+      directionsService: new google.maps.DirectionsService
     }
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
     this.filterDriversWithRadius = this.filterDriversWithRadius.bind(this)
@@ -128,10 +128,13 @@ class Map extends React.Component {
           }
         })
         .then(results => {
+          const closer = _.minBy(results, (o) => o.dist)
+          console.log("closer", closer)
           this.setState({
             ...this.state,
             filter_drivers_with_dist: [...results],
-            filter_drivers: [...filter_drivers]
+            filter_drivers: [...filter_drivers],
+            closer_driver: closer.result
           })
         })
         .catch(err => {
@@ -170,7 +173,6 @@ class Map extends React.Component {
         destination: driver,
         travelMode: 'DRIVING'
       }
-      console.log(driver, center, service)
       service.route(request, function (result, status) {
         if (status == 'OK') {
           const message = {
@@ -232,8 +234,13 @@ class Map extends React.Component {
     const { map, center } = this.state
   }
   render() {
-    console.log(this.state)
-    const { center, address, filter_drivers } = this.state
+
+    const {
+      center,closer_driver,
+      address,
+      filter_drivers,
+      filter_drivers_with_dist } = this.state
+    const direction = filter_drivers_with_dist.length > 0 && filter_drivers_with_dist[0].result
     const { radius } = this.props
     return (
       <div>
@@ -272,7 +279,10 @@ class Map extends React.Component {
                   })
                   : ""
               }
-              {/* <DirectionsRenderer directions={props.directions} /> */}
+              {
+                closer_driver ? <DirectionsRenderer directions={closer_driver} /> : ""
+              }
+
               {
                 Object.keys(center).length > 0 ?
                   <Marker
