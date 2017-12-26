@@ -55,7 +55,6 @@ class MainActivity extends React.PureComponent {
 
     render() {
         const compress = { ...this.state }
-        console.log("state35",this.state)
         return (
             <Grid style={{ padding: "0px", margin: "0px" }} className="force-overflow">
                 <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} className="scrollbar" id="style-1">
