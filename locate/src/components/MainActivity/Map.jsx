@@ -56,7 +56,7 @@ class Map extends React.Component {
         'address': address
       }, (results, status) => {
         if (status === 'OK') {
-          
+
           let geo_result = {
             center: results[0].geometry.location,
             address: address
@@ -64,6 +64,7 @@ class Map extends React.Component {
 
           this.filterDriversWithRadius(drivers, radius)
             .then(drivers => {
+              console.log("radius1", drivers, radius)
               filter_drivers = drivers
               let location = null
               if (filter_drivers.length > 0) {
@@ -85,7 +86,12 @@ class Map extends React.Component {
               }
             })
             .then(results => {
-              this.setState({ ...this.state, ...geo_result, filter_drivers_with_dist: [...results] })
+              this.setState({
+                ...this.state,
+                ...geo_result,
+                filter_drivers: [...filter_drivers],
+                filter_drivers_with_dist: [...results]
+              })
 
             })
             .catch(err => {
@@ -100,6 +106,7 @@ class Map extends React.Component {
     } else {
       this.filterDriversWithRadius(drivers, radius)
         .then(drivers => {
+          console.log("radius2", drivers, radius)
           filter_drivers = drivers
           let location = null
           if (filter_drivers.length > 0) {
@@ -121,8 +128,11 @@ class Map extends React.Component {
           }
         })
         .then(results => {
-          this.setState({ ...this.state,filter_drivers_with_dist: [...results] })
-
+          this.setState({
+            ...this.state,
+            filter_drivers_with_dist: [...results],
+            filter_drivers: [...filter_drivers]
+          })
         })
         .catch(err => {
           console.error(err)
@@ -164,7 +174,8 @@ class Map extends React.Component {
       service.route(request, function (result, status) {
         if (status == 'OK') {
           const message = {
-            dist: result.routes[0].legs[0].distance.value
+            dist: result.routes[0].legs[0].distance.value,
+            result: result
           }
           resolve(message)
         }
