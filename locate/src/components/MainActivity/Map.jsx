@@ -35,54 +35,100 @@ class Map extends React.Component {
       center: {},
       map: null,
       filter_drivers: [],
-      geocoder: new google.maps.Geocoder()
+      filter_drivers_with_dist: [],
+      geocoder: new google.maps.Geocoder(),
+      closer_driver: null,
+      directionsService: new google.maps.DirectionsService,
+      directionsDisplay: new google.maps.DirectionsRenderer
     }
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
     this.filterDriversWithRadius = this.filterDriversWithRadius.bind(this)
   }
   componentWillReceiveProps(nextProps) {
-    const { geocoder } = this.state
+    const { geocoder, directionsService } = this.state
     const address = nextProps.location && nextProps.location.address
+    console.log("address?", address)
     const drivers = nextProps.drivers && nextProps.drivers
     const radius = nextProps.radius && nextProps.radius
-    console.log("radius",radius)
+    let filter_drivers = []
     if (address && address != this.state.address) {
       geocoder.geocode({
         'address': address
       }, (results, status) => {
-        console.log("geo", status, results)
         if (status === 'OK') {
+          
           let geo_result = {
             center: results[0].geometry.location,
             address: address
           }
+
           this.filterDriversWithRadius(drivers, radius)
             .then(drivers => {
-              console.log("filter60", drivers)
-              this.setState({
-                ...this.state,
-                ...geo_result,
-                filter_drivers: [...drivers]
-              })
+              filter_drivers = drivers
+              let location = null
+              if (filter_drivers.length > 0) {
+                return new Promise.map(filter_drivers, (driver) => {
+                  location = new google.maps.LatLng(driver.location)
+                  return this.calculateDistance(location, geo_result.center, directionsService)
+                    .then(result => {
+                      return {
+                        ...result,
+                        driver
+                      }
+                    })
+                    .catch(err => {
+                      console.error(err)
+                    })
+                })
+              } else {
+                return { then: () => { } }
+              }
             })
+            .then(results => {
+              this.setState({ ...this.state, ...geo_result, filter_drivers_with_dist: [...results] })
+
+            })
+            .catch(err => {
+              console.error(err)
+            })
+
         } else {
           console.log("geocodeAddress got errors!")
         }
       })
 
     } else {
-      console.log("5=74")
       this.filterDriversWithRadius(drivers, radius)
         .then(drivers => {
-          console.log("filter60", drivers)
-          this.setState({
-            ...this.state,
-            filter_drivers: [...drivers]
-          })
+          filter_drivers = drivers
+          let location = null
+          if (filter_drivers.length > 0) {
+            return new Promise.map(filter_drivers, (driver) => {
+              location = new google.maps.LatLng(driver.location)
+              return this.calculateDistance(location, this.state.center, directionsService)
+                .then(result => {
+                  return {
+                    ...result,
+                    driver
+                  }
+                })
+                .catch(err => {
+                  console.error(err)
+                })
+            })
+          } else {
+            return { then: () => { } }
+          }
         })
-        .catch(err=>{
+        .then(results => {
+          this.setState({ ...this.state,filter_drivers_with_dist: [...results] })
+
+        })
+        .catch(err => {
           console.error(err)
         })
+
+
     }
   }
   componentDidMount() {
@@ -90,7 +136,7 @@ class Map extends React.Component {
     const geocoder = new google.maps.Geocoder()
     this.setState({
       ...this.state,
-      center: { lat: 10.7625113, lng: 106.6808868 },
+      center: new google.maps.LatLng({ lat: 10.7625113, lng: 106.6808868 }),
       filter_drivers: [...drivers]
     })
     // DirectionsService.route({
@@ -107,6 +153,24 @@ class Map extends React.Component {
     //   }
     // });
   }
+  calculateDistance(driver, center, service) {
+    return new Promise((resolve, reject) => {
+      let request = {
+        origin: center,
+        destination: driver,
+        travelMode: 'DRIVING'
+      }
+      console.log(driver, center, service)
+      service.route(request, function (result, status) {
+        if (status == 'OK') {
+          const message = {
+            dist: result.routes[0].legs[0].distance.value
+          }
+          resolve(message)
+        }
+      })
+    })
+  }
   filterDriversWithRadius(drivers, radius) {
     return new Promise((resolve, reject) => {
       radius = parseFloat(radius)
@@ -115,10 +179,9 @@ class Map extends React.Component {
       } else {
         let updated_drivers = []
         let driver = "", distance = 0
-        const center = new google.maps.LatLng(this.state.center)
         for (let i in drivers) {
           driver = new google.maps.LatLng({ ...drivers[i].location })
-          let distance = parseFloat(google.maps.geometry.spherical.computeDistanceBetween(driver, center).toFixed(2))
+          let distance = parseFloat(google.maps.geometry.spherical.computeDistanceBetween(driver, this.state.center).toFixed(2))
           if (distance <= radius) {
             updated_drivers.push(drivers[i])
           }
@@ -158,9 +221,9 @@ class Map extends React.Component {
     const { map, center } = this.state
   }
   render() {
+    console.log(this.state)
     const { center, address, filter_drivers } = this.state
     const { radius } = this.props
-    console.log("filter,", center)
     return (
       <div>
         {

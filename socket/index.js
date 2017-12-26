@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
                 socket.to(value.id).emit(Phone.NEW_ADDRESS, address)
                 Locaters.set(key, {
                     id: value.id,
-                    status: "busy"
+                    status: "free"
                 })
                 break;
             }
