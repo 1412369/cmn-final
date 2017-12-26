@@ -75,6 +75,19 @@ class Root {
         })
         return d.promise;
     }
+    insertMany(params) {
+        const d = Promise.defer()
+        ConnectDB((err, client) => {
+            if (err) throw err
+            const db = client.db(this.dbName)
+            db.collection(this.collection).insertMany(params,null,(err, data) => {
+                err ? d.reject(err) :
+                    d.resolve(data)
+                client.close()
+            })
+        })
+        return d.promise;
+    }
     modified(params, query) {
         const d = Promise.defer()
         query = this.BeforeUpdate(query)
@@ -96,18 +109,18 @@ class Root {
     }
     findOne(params) {
         const d = Promise.defer()
-        console.log("parmas",params)
+        console.log("parmas", params)
         ConnectDB((err, client) => {
             if (err) throw err
             const db = client.db(this.dbName)
             db.collection(this.collection).findOne(params, null, (err, data) => {
-                console.log(err,data)
+                console.log(err, data)
                 err ? d.reject(err) :
                     d.resolve(data)
                 client.close()
             })
         })
-    return d.promise
+        return d.promise
     }
 }
 module.exports = Root

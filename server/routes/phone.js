@@ -7,7 +7,6 @@ class Phone extends Root {
     constructor() {
         super()
         this.router.get('/', this.CheckStatus.bind(this))
-
         return this.router
 
     }
