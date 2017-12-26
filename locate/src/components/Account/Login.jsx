@@ -27,8 +27,9 @@ class Login extends React.Component {
         this.onSubmit = this.onSubmit.bind(this)
     }
     componentDidMount() {
-        if (this.props.state) {
-            const { from, email, password } = this.props.state.location
+        const {location} = this.props
+        if (location && location.state) {
+            const { from, email, password } = location.state
             if (from === "register") {
                 this.setState(...this.state, { email, password })
             }
@@ -43,19 +44,20 @@ class Login extends React.Component {
     onSubmit() {
         const { email, password } = this.state
         const {socket} = this.props
+        console.log("spcket",socket)
         API.Login(email, password)
             .then(response => {
                 const { data } = response
                 if (data.status === 200) {
                     localStorage.setItem("token", data.message.token)
-                    localStorage.setItem("user",JSON.stringify(data.message))
+                    localStorage.setItem("user",JSON.stringify(data.message.user))
                     localStorage.setItem("isLogged", "true")
-                    data.message
-                    socket.emit(Client.DRIVER,data.message.email)
-                    this.props.changeStatus(true)
+                    socket.emit(Client.DRIVER,data.message.user.email)
+                    this.props.changeStatus(true,data.message.user)
                 }
             })
             .catch(err => {
+                throw err
                 this.setState(...this.state, { err: err.response.data })
             })
     }

@@ -5,3 +5,4 @@ import {
 
 export const GetDrivers = () => axios.get('/drivers')
 export const UpdateLocation=(location,id) => axios.put(`/users/location/${id}`,{location})
+export const Pair=(payload,id) => axios.put(`/drivers/pair/${id}`,{payload})

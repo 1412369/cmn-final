@@ -1,6 +1,6 @@
 import axios from 'axios'
 const Locate = {
-    DONE_ADDRESS: "locate_done"
+    PAIR: "pair_driver_with_locate"
 }
 const Phone = {
     NEW_ADDRESS: "phone_new",

@@ -17,7 +17,7 @@ const Socket = {
 
     },
     Locate: {
-        DONE_ADDRESS: "locate_done"
+        PAIR: "pair_driver_with_locate"
     },
     Phone: {
         NEW_ADDRESS: "phone_new",

@@ -41,7 +41,8 @@ class Routing extends PureComponent {
     this.state = {
       visible: false,
       isLogged: false,
-      socket:null
+      socket:null,
+      current_user:null
     }
     this.changeStatus = this.changeStatus.bind(this)
   }
@@ -50,7 +51,7 @@ class Routing extends PureComponent {
     // Need to set the renderNode since the drawer uses an overlay
     const isLogged = localStorage.getItem('isLogged')
     const socket = io.connect('http://localhost:8000')
-    if (isLogged === 'true') {
+    if (isLogged && isLogged.toString() === 'true') {
       GetMe(localStorage.getItem('token'))
         .then(response => {
           localStorage.setItem('user', JSON.stringify(response.data.message))
@@ -59,14 +60,13 @@ class Routing extends PureComponent {
         .catch(err => {
           throw err
         })
-
-      this.setState(...this.state, { isLogged, socket })
+      this.setState({...this.state, isLogged, socket,current_user:JSON.parse(localStorage.getItem('user'))})
     } else {
-      this.setState(...this.state, { socket })
+      this.setState({...this.state,  socket })
     }
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
-  changeStatus(status) { this.setState(...this.state, { isLogged: status }) }
+  changeStatus(status,user) { this.setState({...this.state,  isLogged: status,current_user:user }) }
   showDrawer = () => {
     this.setState({ visible: true });
   };
@@ -81,13 +81,14 @@ class Routing extends PureComponent {
 
   render() {
     const { location } = this.props;
-    const { visible, isLogged } = this.state;
+    const { visible, isLogged ,current_user} = this.state
+    const name = current_user && current_user.name
     return (
       <div>
         {
           !isLogged ? <Toolbar colored fixed title="Đăng nhập" /> :
 
-            <Toolbar colored fixed title={`Hello ${localStorage.getItem("current_user")}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+            <Toolbar colored fixed title={`Hello ${name}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
         }
 
         <CSSTransitionGroup

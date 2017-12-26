@@ -31,7 +31,6 @@ class Map extends React.Component {
   constructor() {
     super()
     this.state = {
-      address: "BRAD CENTER",
       center: {},
       map: null,
       filter_drivers: [],
@@ -46,57 +45,67 @@ class Map extends React.Component {
   }
   componentWillReceiveProps(nextProps) {
     const { geocoder, directionsService } = this.state
+    const { updateCloserDriver } = this.props
     const address = nextProps.location && nextProps.location.address
     console.log("address?", address)
     const drivers = nextProps.drivers && nextProps.drivers
     const radius = nextProps.radius && nextProps.radius
     let filter_drivers = []
-    if (address && address != this.state.address) {
+    if (address) {
       geocoder.geocode({
         'address': address
       }, (results, status) => {
         if (status === 'OK') {
-
-          let geo_result = {
-            center: results[0].geometry.location,
-            address: address
-          }
-
-          this.filterDriversWithRadius(drivers, radius)
-            .then(drivers => {
-              console.log("radius1", drivers, radius)
-              filter_drivers = drivers
-              let location = null
-              if (filter_drivers.length > 0) {
-                return new Promise.map(filter_drivers, (driver) => {
-                  location = new google.maps.LatLng(driver.location)
-                  return this.calculateDistance(location, geo_result.center, directionsService)
-                    .then(result => {
-                      return {
-                        ...result,
-                        driver
-                      }
-                    })
-                    .catch(err => {
-                      console.error(err)
-                    })
-                })
-              } else {
-                return { then: () => { } }
-              }
-            })
-            .then(results => {
-              this.setState({
-                ...this.state,
-                ...geo_result,
-                filter_drivers: [...filter_drivers],
-                filter_drivers_with_dist: [...results]
+          console.log("geo_result", results)
+          let center = results[0].geometry.location
+          if (drivers.length > 0) {
+            this.filterDriversWithRadius(drivers, radius)
+              .then(drivers => {
+                filter_drivers = drivers
+                let location = null
+                if (filter_drivers.length > 0) {
+                  return new Promise.map(filter_drivers, (driver) => {
+                    location = new google.maps.LatLng(driver.location)
+                    return this.calculateDistance(location, center, directionsService)
+                      .then(result => {
+                        return {
+                          ...result,
+                          driver
+                        }
+                      })
+                      .catch(err => {
+                        console.error(err)
+                      })
+                  })
+                } else {
+                  updateCloserDriver(null)
+                  this.setState({
+                    ...this.state,
+                    filter_drivers: [],
+                    filter_drivers_with_dist: []
+                  })
+                  return {
+                    then: function () { }
+                  };
+                }
               })
+              .then(results => {
+                const closer = _.minBy(results, (o) => o.dist)
+                updateCloserDriver(closer)
+                this.setState({
+                  ...this.state,
+                  center,
+                  filter_drivers: [...filter_drivers],
+                  filter_drivers_with_dist: [...results],
+                })
 
-            })
-            .catch(err => {
-              console.error(err)
-            })
+              })
+              .catch(err => {
+                console.error(err)
+              })
+          } else {
+              this.setState({...this.state,center})
+          }
 
         } else {
           console.log("geocodeAddress got errors!")
@@ -106,7 +115,6 @@ class Map extends React.Component {
     } else {
       this.filterDriversWithRadius(drivers, radius)
         .then(drivers => {
-          console.log("radius2", drivers, radius)
           filter_drivers = drivers
           let location = null
           if (filter_drivers.length > 0) {
@@ -124,12 +132,19 @@ class Map extends React.Component {
                 })
             })
           } else {
+            updateCloserDriver(null)
+            this.setState({
+              ...this.state,
+              closer_driver: null,
+              filter_drivers: [],
+              filter_drivers_with_dist: []
+            })
             return { then: () => { } }
           }
         })
         .then(results => {
           const closer = _.minBy(results, (o) => o.dist)
-          console.log("closer", closer)
+          updateCloserDriver(closer)
           this.setState({
             ...this.state,
             filter_drivers_with_dist: [...results],
@@ -236,12 +251,12 @@ class Map extends React.Component {
   render() {
 
     const {
-      center,closer_driver,
+      center,
       address,
       filter_drivers,
       filter_drivers_with_dist } = this.state
-    const direction = filter_drivers_with_dist.length > 0 && filter_drivers_with_dist[0].result
-    const { radius } = this.props
+    const { radius, closer_driver } = this.props
+    const direct = closer_driver && closer_driver.result
     return (
       <div>
         {
@@ -269,7 +284,8 @@ class Map extends React.Component {
                       name="name"
                       icon={{
                         url: '/bike.png',
-                        scaledSize: new google.maps.Size(50, 50)
+                        scaledSize: new google.maps.Size(50, 50),
+                        anchor: new google.maps.Point(30, 30)
                       }}
                       draggable={true}
                       onDragEnd={(marker) => {
@@ -280,7 +296,12 @@ class Map extends React.Component {
                   : ""
               }
               {
-                closer_driver ? <DirectionsRenderer directions={closer_driver} /> : ""
+                direct ? <DirectionsRenderer
+                  directions={direct}
+                  options={{
+                    suppressMarkers: true
+                  }}
+                /> : ""
               }
 
               {

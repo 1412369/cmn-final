@@ -28,16 +28,19 @@ class MainActivity extends React.PureComponent {
         socket.on(Socket.Phone.NEW_ADDRESS, (address) => {
             this.setState({ ...this.state, location: address })
         })
+        socket.on(Socket.Locate.PAIR, (address) => {
+            this.setState({ ...this.state, location: address })
+        })
     }
 
     render() {
         const compress = { ...this.state, ...this.props }
         return (
             <Grid style={{ padding: "0px", margin: "0px" }} className="force-overflow">
-                <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} className="scrollbar" id="style-1">
+                <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} >
                     <LeftActivity {...this.state}/>
                 </Cell>
-                <Cell size={8} style={{ padding: "0px", margin: "0px" }}>
+                <Cell size={8} phoneSize={12} style={{ padding: "0px", margin: "0px" }}>
                     <MyMapComponent
                         {...this.state}
                     />

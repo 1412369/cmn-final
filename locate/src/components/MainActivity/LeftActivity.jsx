@@ -10,17 +10,14 @@ class LeftActivity extends React.PureComponent {
         isMarkerShown: false,
     }
     onRadiusChange(value, index, e) {
-        value = value ==="Tất cả"? 0 : value 
+        value = value === "Tất cả" ? 0 : value
         this.props.updateRadius(value)
     }
-    onSubmit() {
-        // const { updateRadius } = this.props
-        // const { _radius, _type } = this.state
-        // updateRadius(_radius)
-    }
     render() {
-        const { _radius, _type } = this.state
-        const { address = "", name = "", phone = "", type = "", note = "" } = this.props.location
+        const { pairDriverUser, location, closer_driver,radius } = this.props
+        const driver_name = closer_driver && closer_driver.driver && closer_driver.driver.name || ""
+        const driver_email = closer_driver && closer_driver.driver && closer_driver.driver.email || ""
+        const { address = "", name = "", phone = "", type = "", note = "" } = location
         return (
             <ExpansionList>
                 <ExpansionPanel
@@ -72,7 +69,7 @@ class LeftActivity extends React.PureComponent {
                             id="disabled-floating-label-multiline-field"
                             label="Ghi chú:"
                             disabled
-                            value={note}
+                            value={"note"}
                             leftIcon={<FontIcon>note</FontIcon>}
                         />
                     </Cell>
@@ -88,10 +85,10 @@ class LeftActivity extends React.PureComponent {
                                 label="Bán kính"
                                 placeholder="Chọn bán kính"
                                 block={true}
-                                value={_radius}
+                                value={radius}
                                 onChange={this.onRadiusChange.bind(this)}
                                 name="radius"
-                                menuItems={["Tất cả",600, 800, 1000]}
+                                menuItems={["Tất cả", 600, 800, 1000]}
                                 simplifiedMenu={true}
                             />
                         </Cell>
@@ -101,13 +98,14 @@ class LeftActivity extends React.PureComponent {
                             raised
                             primary
                             swapTheming
-                            onClick={this.onSubmit.bind(this)}
-                        >Tìm kiếm</Button>
+                            onClick={pairDriverUser}
+                        >Ghép tài xế</Button>
                     </Grid>
                     <Cell size={12}>
                         <TextField
                             id="disabled-floating-label-multiline-field"
                             label="Ghi chú:"
+                            value={" "}
                             disabled
                             leftIcon={<FontIcon>note</FontIcon>}
                         />
