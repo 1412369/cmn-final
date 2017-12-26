@@ -9,7 +9,7 @@ import { Socket } from '../Config/config.js'
 import {GetDrivers} from './api.js'
 
 const removeDriver = (drivers,id) => {
-    return drivers.filter(driver=>driver._id!=id)
+    return drivers.filter(driver=>driver._id!=id && driver)
 }
 class MainActivity extends React.PureComponent {
     constructor() {
@@ -17,7 +17,7 @@ class MainActivity extends React.PureComponent {
         this.state = {
             location: {},
             drivers:[],
-
+            radius:0
         }
         this.fetchDriver = this.fetchDriver.bind(this)
         this.updateDrivers = this.updateDrivers.bind(this)
@@ -33,9 +33,12 @@ class MainActivity extends React.PureComponent {
             const drivers = response.data.message
             this.setState({...this.state,drivers})
         })
-    }  
+    }
     updateDrivers(drivers){
         this.setState({...this.state,drivers:[...drivers]})
+    }
+    updateRadius(radius){
+        this.setState({...this.state,radius})
     }
     componentDidMount() {
         const {drivers}= this.state
@@ -48,17 +51,21 @@ class MainActivity extends React.PureComponent {
             this.setState({...this.state,drivers:[...this.state.drivers,driver]})
         })
         socket.on(Socket.Driver.OFFLINE ,(id)=>{
-            const filterDriver = drivers.filter(driver=>driver._id!=id)
+            const filterDriver = drivers.filter(driver=>driver._id!=id && driver)
             this.setState({...this.state,drivers:[...filterDriver]})
         })
     }
 
     render() {
         const compress = { ...this.state }
+        console.log("main_update",this.state.radius)
         return (
             <Grid style={{ padding: "0px", margin: "0px" }} className="force-overflow">
                 <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} className="scrollbar" id="style-1">
-                    <LeftActivity {...this.state}/>
+                    <LeftActivity 
+                    {...this.state}
+                    updateRadius={this.updateRadius.bind(this)}
+                    />
                 </Cell>
                 <Cell size={8} style={{ padding: "0px", margin: "0px" }}>
                     <MyMapComponent

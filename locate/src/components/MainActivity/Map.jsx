@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 import _ from 'lodash'
 import React from 'react'
+import Promise from 'bluebird'
 import {
   withScriptjs,
   withGoogleMap,
@@ -30,57 +31,67 @@ class Map extends React.Component {
   constructor() {
     super()
     this.state = {
-      address: "227 nguyen van cu",
+      address: "BRAD CENTER",
       center: {},
       map: null,
       filter_drivers: [],
-      radius:0
+      geocoder: new google.maps.Geocoder()
     }
-    this.geocodeAddress = this.geocodeAddress.bind(this)
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
     this.filterDriversWithRadius = this.filterDriversWithRadius.bind(this)
   }
   componentWillReceiveProps(nextProps) {
+    const { geocoder } = this.state
     const address = nextProps.location && nextProps.location.address
     const drivers = nextProps.drivers && nextProps.drivers
-    if (address != this.state.address) {
-      this.geocodeAddress(address)
-    }
-    console.log("receiver_props")
-    if(this.state.radius!=0){
-      this.filterDriversWithRadius(this.state.radius)
-    }
-  }
-  geocodeAddress(address) {
-    const geocoder = new google.maps.Geocoder()
-    geocoder.geocode({
-      'address': address
-    }, (results, status) => {
-      if (status === 'OK') {
-        console.log(results)
-        this.setState({
-          ...this.state,
-          center: results[0].geometry.location,
-          address: address
+    const radius = nextProps.radius && nextProps.radius
+    console.log("radius",radius)
+    if (address && address != this.state.address) {
+      geocoder.geocode({
+        'address': address
+      }, (results, status) => {
+        console.log("geo", status, results)
+        if (status === 'OK') {
+          let geo_result = {
+            center: results[0].geometry.location,
+            address: address
+          }
+          this.filterDriversWithRadius(drivers, radius)
+            .then(drivers => {
+              console.log("filter60", drivers)
+              this.setState({
+                ...this.state,
+                ...geo_result,
+                filter_drivers: [...drivers]
+              })
+            })
+        } else {
+          console.log("geocodeAddress got errors!")
+        }
+      })
+
+    } else {
+      console.log("5=74")
+      this.filterDriversWithRadius(drivers, radius)
+        .then(drivers => {
+          console.log("filter60", drivers)
+          this.setState({
+            ...this.state,
+            filter_drivers: [...drivers]
+          })
         })
-      }
-    })
+        .catch(err=>{
+          console.error(err)
+        })
+    }
   }
   componentDidMount() {
-    const { address } = this.state
     const { drivers } = this.props
     const geocoder = new google.maps.Geocoder()
-    geocoder.geocode({
-      'address': address
-    }, (results, status) => {
-      if (status === 'OK') {
-        console.log(results)
-        this.setState({
-          ...this.state,
-          center: results[0].geometry.location,
-          filter_drivers:[...drivers]
-        })
-      }
+    this.setState({
+      ...this.state,
+      center: { lat: 10.7625113, lng: 106.6808868 },
+      filter_drivers: [...drivers]
     })
     // DirectionsService.route({
     //   origin: new google.maps.LatLng(10.7626272, 106.6805864),
@@ -96,20 +107,25 @@ class Map extends React.Component {
     //   }
     // });
   }
-  filterDriversWithRadius(radius) {
-    radius = parseFloat(radius)
-    let { drivers, updateDrivers } = this.props
-    let { center, filter_drivers } = this.state
-    let updated_drivers = []
-    let driver = "", distance = 0
-    for (let i in drivers) {
-      driver = new google.maps.LatLng({ ...drivers[i].location })
-      let distance = parseFloat(google.maps.geometry.spherical.computeDistanceBetween(driver, center).toFixed(2))
-      if (distance <= radius) {
-        updated_drivers.push(drivers[i])
+  filterDriversWithRadius(drivers, radius) {
+    return new Promise((resolve, reject) => {
+      radius = parseFloat(radius)
+      if (radius === 0) {
+        resolve(drivers)
+      } else {
+        let updated_drivers = []
+        let driver = "", distance = 0
+        const center = new google.maps.LatLng(this.state.center)
+        for (let i in drivers) {
+          driver = new google.maps.LatLng({ ...drivers[i].location })
+          let distance = parseFloat(google.maps.geometry.spherical.computeDistanceBetween(driver, center).toFixed(2))
+          if (distance <= radius) {
+            updated_drivers.push(drivers[i])
+          }
+        }
+        resolve(updated_drivers)
       }
-    }
-    this.setState({ ...this.state, filter_drivers: [...updated_drivers] })
+    })
     // updateDrivers(filter_drivers)
   }
   updateDriverPosition(marker, id) {
@@ -142,8 +158,9 @@ class Map extends React.Component {
     const { map, center } = this.state
   }
   render() {
-    const { center, address,filter_drivers, radius} = this.state
-    console.log("filter,",center)
+    const { center, address, filter_drivers } = this.state
+    const { radius } = this.props
+    console.log("filter,", center)
     return (
       <div>
         {
@@ -154,13 +171,13 @@ class Map extends React.Component {
               onBoundsChanged={this.onBoundsChanged.bind(this)}
               ref={this.onMapLoad.bind(this)}
             >
-            {
-              radius !== 0?
-              <Circle
-                center={center}
-                radius={1000}
-              />:null
-            }
+              {
+                radius !== 0 ?
+                  <Circle
+                    center={center}
+                    radius={radius}
+                  /> : null
+              }
               {
                 filter_drivers.length > 0 ?
                   filter_drivers.map(({ location, _id }) => {
@@ -182,16 +199,19 @@ class Map extends React.Component {
                   : ""
               }
               {/* <DirectionsRenderer directions={props.directions} /> */}
-              <Marker
-                position={center}
-                defaultVisible={true}
-              // icon={{
-              //   url: 'image/user.png',
-              //   scaledSize: new google.maps.Size(30, 30)
-              // }}
-              >
-                <InfoWindow><div>{address}</div></InfoWindow>
-              </Marker>
+              {
+                Object.keys(center).length > 0 ?
+                  <Marker
+                    position={center}
+                    defaultVisible={true}
+                  // icon={{
+                  //   url: 'image/user.png',
+                  //   scaledSize: new google.maps.Size(30, 30)
+                  // }}
+                  >
+                    <InfoWindow><div>{address}</div></InfoWindow>
+                  </Marker> : null
+              }
             </GoogleMap >
             : <h2>Loading</h2>
         }
