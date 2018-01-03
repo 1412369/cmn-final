@@ -1,23 +1,18 @@
-const Locate = {
-    DONE_ADDRESS: "locate_done",
-}
-const Phone = {
-    NEW_ADDRESS: "phone_new",
-}
-const Driver = {
-    ONLINE:"driver_active",
-    OFFLINE:"driver_offline",
-}
-const Client = {
-    PHONE: "phone",
-    DRIVER: "driver",
-    POINT: "point",
-    LOCATE: "locate"
-}
-
 module.exports = {
-    Client,
-    Driver,
-    Locate,
-    Phone
+    Client:{
+        PHONE: "phone",
+        DRIVER: "driver",
+        POINT: "point",
+        LOCATE: "locate"
+    },
+    Driver:{
+        ONLINE:"driver_active",
+        OFFLINE:"driver_offline",
+    },
+    Locate:{
+        PAIR: "pair_driver_with_locate",
+    },
+    Phone:{
+        NEW_ADDRESS: "phone_new",
+    }
 }

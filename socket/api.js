@@ -13,8 +13,12 @@ const OnlineDriver = (email) =>
     fetch.put(`/users/online`, {
         email: email
     })
-
+const Pair = (payload, id) =>
+    fetch.put(`/drivers/pair/${id}`, {
+        payload
+    })
 module.exports = {
     OnlineDriver,
-    OfflineDriver
+    OfflineDriver,
+    Pair
 }
