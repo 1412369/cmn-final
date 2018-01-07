@@ -2,12 +2,13 @@ import React from 'react';
 import MyMapComponent from './Map'
 import {
     Grid, Cell, ExpansionPanel, Paper, TextField, FontIcon,
-    ExpansionList, TabsContainer, Tabs, Tab, Button,DialogContainer
+    ExpansionList, TabsContainer, Tabs, Tab, Button, DialogContainer
 } from 'react-md'
 import LeftActivity from './LeftActivity'
 import { Socket } from '../Config/config.js'
 import { GetDrivers, Pair } from './api.js'
 import Clock from 'react-countdown-clock'
+import {toast,ToastContainer} from 'react-toastify'
 const removeDriver = (drivers, id) => {
     return drivers.filter(driver => driver._id != id && driver)
 }
@@ -18,6 +19,7 @@ class MainActivity extends React.PureComponent {
             location: {},
             drivers: [],
             radius: 0,
+            notifyId:null,
             closer_driver: ""
         }
         this.fetchDriver = this.fetchDriver.bind(this)
@@ -55,8 +57,9 @@ class MainActivity extends React.PureComponent {
         }
         this.setState({
             ...this.state,
-            status:"pairing"
+            status: "pairing"
         })
+        this.notify()
         socket.emit(Socket.Locate.PAIR, payload)
     }
     updateRadius(radius) {
@@ -82,6 +85,8 @@ class MainActivity extends React.PureComponent {
             socket.on(Socket.Driver.DRIVER_ACCEPT, (payload) => {
                 GetDrivers().then(response => {
                     const drivers = response.data.message
+                    const {notifyId} = this.state
+                    toast.dismiss(notifyId)
                     this.setState({
                         ...this.state,
                         drivers,
@@ -110,21 +115,30 @@ class MainActivity extends React.PureComponent {
             throw new Error("Loi cai con cac")
         }
     }
-    onHide(){
+    notify(){
+        const id=toast.success("Phản hồi từ tài xế!",{ autoClose: 5000 })
         this.setState({
             ...this.state,
-            status:"pairing"
+            notifyId:id
+        })
+    }
+    onHide() {
+        this.setState({
+            ...this.state,
+            status: "pairing"
         })
     }
     render() {
-        const {status} = this.state
-        console.log("status",status)
+        const { status } = this.state
+        console.log("status", status)
         return (
             <Grid style={{ padding: "0px", margin: "0px" }} className="force-overflow">
+                <ToastContainer 
+                autoClose={5000}/>
                 <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} className="scrollbar" id="style-1">
                     <LeftActivity
                         {...this.state}
-                        onHide = {this.onHide.bind(this)}
+                        onHide={this.onHide.bind(this)}
                         updateRadius={this.updateRadius.bind(this)}
                         pairDriverUser={this.pairDriverUser.bind(this)}
                     />
