@@ -8,6 +8,9 @@ module.exports = {
     Driver:{
         ONLINE:"driver_active",
         OFFLINE:"driver_offline",
+        DRIVER_MOVE:"driver_move",
+        DRIVER_ACCEPT:"drover_accept",
+        DRIVER_DENIED:"driver_denied"
     },
     Locate:{
         PAIR: "pair_driver_with_locate",

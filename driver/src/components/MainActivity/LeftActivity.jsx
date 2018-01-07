@@ -4,7 +4,7 @@ import {
     Grid, Cell, ExpansionPanel, Paper, TextField, FontIcon,
     ExpansionList, TabsContainer, Tabs, Tab, Button, SelectField
 } from 'react-md'
-
+import Clock from 'react-countdown-clock'
 class LeftActivity extends React.PureComponent {
     state = {
         isMarkerShown: false,
@@ -15,39 +15,53 @@ class LeftActivity extends React.PureComponent {
             <Grid>
                 <Cell size={8} phoneSize={12}>
                     <TextField
-                        id="disabled-floating-label-multiline-field"
                         label="Địa chỉ khách:"
                         value={address}
                         disabled
                         leftIcon={<FontIcon>add_location</FontIcon>}
                     />
                 </Cell>
-                <Cell size={4}  phoneSize={12}>
+                <Cell size={4} phoneSize={12}>
                     <TextField
-                        id="disabled-floating-label-multiline-field"
                         label="Loại xe:"
                         disabled
                         value={type}
                         leftIcon={<FontIcon>directions_bike</FontIcon>}
                     />
                 </Cell>
-                <Cell size={12}  phoneSize={12}>
+                <Cell size={12} phoneSize={12}>
                     <TextField
-                        id="disabled-floating-label-multiline-field"
                         label="Ghi chú:"
                         value={address}
                         disabled
                         leftIcon={<FontIcon>note</FontIcon>}
                     />
                 </Cell>
-                <Cell>
+                <Cell size={12} phoneSize={12}>
+                    <TextField
+                        label="Số điện thoại:"
+                        value={address}
+                        disabled
+                        leftIcon={<FontIcon>note</FontIcon>}
+                    />
+                </Cell>
+                <Cell size={6}>
                     <Button
+                        disabled
                         raised
                         primary
                         swapTheming
-
-                    >Ghép tài xế</Button>
+                    >Đón Khách</Button>
                 </Cell>
+                <Cell size={6}>
+                    <Button
+                        raised
+                        disabled
+                        primary
+                        swapTheming
+                    >Trả khách</Button>
+                </Cell>
+                
             </Grid>
 
         )

@@ -41,7 +41,6 @@ class Point extends Root {
         cryptPassword(password)
         .then(result=>{
             params.password = result
-            console.log(params)
             return Model.User.insert(params)
         })
         .then(result=>{

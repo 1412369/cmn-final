@@ -77,6 +77,7 @@ class Driver extends Root {
                 })
             })
             .then(result => {
+                
                 this.HandleResult(res, 200, result)
             })
             .catch(err => {
@@ -84,31 +85,38 @@ class Driver extends Root {
             })
     }
     PairDriver(req, res, next) {
+        let results ={}
         const {
             driver,
-            locator
+            locater
         } = req.body.payload
         const _id = req.params.id
         const update = {
             $set: {
                 driver: driver,
-                locator: locator,
+                locater: locater,
                 status: "moving"
             }
         }
         Model.Locate.modified({
                 _id: ObjectID(_id)
             }, update).then(response => {
+                results.location = response
                 return Model.User.modified({
                     _id: ObjectID(driver._id)
                 }, {
                     $set: {
-                        status: "busy"
+                        status: "busy",
+                        point:{
+                            _id:response._id,
+                            location:response.location
+                        }
                     }
                 })
             })
-            .then(result => {
-                this.HandleResult(res, 200, result)
+            .then(response => {
+                results.driver = response
+                this.HandleResult(res, 200, results)
             })
             .catch(err => {
                 throw err

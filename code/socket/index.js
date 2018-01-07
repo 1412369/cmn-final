@@ -9,7 +9,8 @@ const {
 } = require("./config.js");
 const {
     OfflineDriver,
-    OnlineDriver
+    OnlineDriver,
+    Pair
 } = require('./api')
 let Pointers = new Map()
 let Drivers = new Map()
@@ -25,11 +26,10 @@ io.on('connection', (socket) => {
         OnlineDriver(client_id)
             .then(response => {
                 for (let [key, value] of Locaters) {
-                    socket.to(value.id).emit(Driver.ONLINE, response.data.message)
+                    io.to(value.id).emit(Driver.ONLINE, response.data.message)
                 }
-                console.log(`Online: ${client_id}`)
             })
-            .catch(err => console.err(err))
+            .catch(err => console.error(err))
         Drivers.set(client_id, {
             id: socket.id,
             status: "free"
@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
     })
     socket.on(Client.POINT, (client_id) => {})
     socket.on(Client.LOCATE, (client_id) => {
-        console.log(`Connected: ${client_id}`)
+        console.log(`Connected: ${client_id},${socket.id}`)
         Locaters.set(client_id, {
             id: socket.id,
             status: "free"
@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
     socket.on(Phone.NEW_ADDRESS, (address) => {
         for (let [key, value] of Locaters) {
             if (value.status === "free") {
-                socket.to(value.id).emit(Phone.NEW_ADDRESS, address)
+                io.to(value.id).emit(Phone.NEW_ADDRESS, address)
                 Locaters.set(key, {
                     id: value.id,
                     status: "busy"
@@ -63,6 +63,39 @@ io.on('connection', (socket) => {
             }
         }
     })
+    // Pair Driver With Location
+    socket.on(Driver.DRIVER_MOVE,(payload)=>{
+        console.log("move",payload)
+        const driver = Drivers.get(payload.email)
+        console.log(Drivers,driver)
+        for (let [key, value] of Locaters) {
+            io.to(value.id).emit(Driver.DRIVER_MOVE, payload)
+        }
+        io.to(driver.id).emit(Driver.DRIVER_MOVE,payload)
+    })
+    socket.on(Locate.PAIR, (payload) => {
+        const driver_value = Drivers.get(payload.driver.email)
+        const locator_value = Locaters.get(payload.locator.email)
+        const data = {
+            driver: payload.driver,
+            locator: payload.locator
+        }
+        Pair(data, payload._id).then(response => {
+            io.to(driver_value.id).emit(Locate.PAIR,response.data.message)
+            io.to(locator_value.id).emit(Locate.PAIR)
+            Drivers.set(driver_value.email, {
+                id: driver_value.id,
+                status: "busy"
+            })
+            Locaters.set(locator_value.email, {
+                id: locator_value.id,
+                status: "free"
+            })
+        }).catch(err => {
+            throw err
+        })
+
+    })
     socket.on("disconnect", (reason) => {
         for (let [key, value] of Drivers) {
             if (value.id === socket.id) {
@@ -70,10 +103,10 @@ io.on('connection', (socket) => {
                 OfflineDriver(key)
                     .then(response => {
                         for (let [key, value] of Locaters) {
-                            socket.to(value.id).emit(Driver.OFFLINE,response.data.message.driver_id)
+                            io.to(value.id).emit(Driver.OFFLINE, response.data.message.driver_id)
                         }
                     })
-                    .catch(err => console.err(err))
+                    .catch(err => console.error(err))
                 break;
             }
         }

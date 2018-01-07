@@ -6,9 +6,11 @@ import { withRouter } from 'react-router-dom';
 import { Link, Route, Switch } from 'react-router-dom';
 import { Button, Drawer, Toolbar } from 'react-md';
 import { Home, About, CallHistory, Login, Profile, Register } from './'
-import {Client} from './Config/config.js'
-import {GetMe} from './api.js'
+import { Client } from './Config/config.js'
+import { GetMe } from './api.js'
 import NavItemLink from './NavItemLink'
+import { Socket } from './Config/config.js'
+import Notifications from "react-web-notification"
 const navItems = [{
   label: 'Home',
   to: '/',
@@ -41,11 +43,32 @@ class Routing extends PureComponent {
     this.state = {
       visible: false,
       isLogged: false,
-      socket:null
+      driver: null,
+      ask: false,
+      point: null,
+      locater: null,
+      socket: null
     }
     this.changeStatus = this.changeStatus.bind(this)
   }
-
+  onAccept() {
+    const { socket, point, driver, locater } = this.state
+    const payload = {
+      point, driver, locater
+    }
+    socket.emit(Socket.Driver.DRIVER_ACCEPT, payload)
+    this.setState({ ...this.state, ask: false })
+    console.log("accept")
+  }
+  onDenied() {
+    const { socket } = this.state
+    this.setState({ ...this.state, ask: false, locater: null, point: null })
+    console.log("denied")
+  }
+  onHide() {
+    const { socket } = this.state
+    this.setState({ ...this.state, point: null, locater: null, ask: false })
+  }
   componentDidMount() {
     // Need to set the renderNode since the drawer uses an overlay
     const isLogged = localStorage.getItem('isLogged')
@@ -55,18 +78,30 @@ class Routing extends PureComponent {
         .then(response => {
           localStorage.setItem('user', JSON.stringify(response.data.message))
           socket.emit(Client.DRIVER, response.data.message.email)
+          this.setState(...this.state, { driver: response.data.message, isLogged, socket })
         })
         .catch(err => {
           throw err
         })
-
-      this.setState(...this.state, { isLogged, socket })
     } else {
       this.setState(...this.state, { socket })
     }
+    socket.on(Socket.Locate.PAIR, (data) => {
+      this.setState({
+        ...this.state,
+        point: data.point,
+        locater: data.locater,
+        ask: true
+      })
+    })
+    socket.on(Socket.Driver.DRIVER_MOVE, (driver) => {
+      this.setState({ ...this.state, driver })
+    })
+
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
-  changeStatus(status) { this.setState(...this.state, { isLogged: status }) }
+  changeStatus(driver) { this.setState({ ...this.state, isLogged: true, driver }) }
+  updateDriver(driver) { this.setState({ ...this.state, driver }) }
   showDrawer = () => {
     this.setState({ visible: true });
   };
@@ -74,21 +109,79 @@ class Routing extends PureComponent {
   // hideDrawer = () => {
   //   this.setState({ visible: false });
   // };
-
+  changeAsk = (status) => this.setState({ ...this.state, ask: status })
   handleVisibility = (visible) => {
     this.setState({ visible });
   };
+  handlePermissionGranted() {
+    console.log('Permission Granted');
+    this.setState({
+      ignore: false
+    });
+  }
+  handlePermissionDenied() {
+    console.log('Permission Denied');
+    this.setState({
+      ignore: true
+    });
+  }
+  handleNotSupported() {
+    console.log('Web Notification not Supported');
+    this.setState({
+      ignore: true
+    });
+  }
 
+  handleNotificationOnClick(e, tag) {
+    console.log(e, 'Notification clicked tag:' + tag);
+  }
+
+  handleNotificationOnError(e, tag) {
+    console.log(e, 'Notification error tag:' + tag);
+  }
+
+  handleNotificationOnClose(e, tag) {
+    console.log(e, 'Notification closed tag:' + tag);
+  }
+
+  handleNotificationOnShow(e, tag) {
+    // this.playSound();
+    console.log(e, 'Notification shown tag:' + tag);
+  }
   render() {
     const { location } = this.props;
-    const _user = JSON.parse(localStorage.getItem("user")) 
-    const { visible, isLogged } = this.state;
+    console.log("after", this.state)
+    const _user = JSON.parse(localStorage.getItem("user"))
+    const { visible, isLogged, driver, point } = this.state;
+    const options = {
+      tag: "New Address receiver",
+      body: point && point.address,
+      icon: "/image/user.png",
+      lang: 'en',
+      dir: 'ltr',
+      sound: './sound.mp3'  // no browsers supported https://developer.mozilla.org/en/docs/Web/API/notification/sound#Browser_compatibility
+    }
     return (
       <div>
         {
           !isLogged ? <Toolbar colored fixed title="Đăng nhập" /> :
-
             <Toolbar colored fixed title={`Hello ${_user.name}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+        }
+        {
+          point ?
+            <Notifications
+              ignore={!point}
+              notSupported={this.handleNotSupported.bind(this)}
+              onPermissionGranted={this.handlePermissionGranted.bind(this)}
+              onPermissionDenied={this.handlePermissionDenied.bind(this)}
+              onShow={this.handleNotificationOnShow.bind(this)}
+              onClick={this.handleNotificationOnClick.bind(this)}
+              onClose={this.handleNotificationOnClose.bind(this)}
+              onError={this.handleNotificationOnError.bind(this)}
+              timeout={5000}
+              title={"Có khách kìa đại ca <3!"}
+              options={options}
+            /> : ""
         }
 
         <CSSTransitionGroup
@@ -99,7 +192,16 @@ class Routing extends PureComponent {
         >
           <div style={{ marginTop: "64px" }}>
             <Switch key={location.pathname}>
-              <Route path='/' exact render={() => <Home {...this.state} {...this.props} changeStatus={this.changeStatus} />} />
+              <Route path='/' exact render={() =>
+                <Home
+                  {...this.state} {...this.props}
+                  changeStatus={this.changeStatus}
+                  changeAsk={this.changeAsk.bind(this)}
+                  onAccept={this.onAccept.bind(this)}
+                  onDenied={this.onDenied.bind(this)}
+                  onHide={this.onHide.bind(this)}
+                  updateDriver={this.updateDriver.bind(this)} />
+              } />
               <Route path='/register' component={Register} />
               <Route path='/history' render={() => <CallHistory {...this.state} {...this.props} changeStatus={this.changeStatus} />} />
               <Route path='/about' render={() => <About {...this.state} {...this.props} changeStatus={this.changeStatus} />} />

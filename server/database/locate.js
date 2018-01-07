@@ -15,7 +15,7 @@ class Locate extends Root {
         if (!fields['name']) fields['name'] = null
         if (!fields['created_at']) fields['created_at'] = new Date()
         if (!fields['driver']) fields['driver'] = null
-        if (!fields['locator']) fields['locator'] = null
+        if (!fields['locater']) fields['locater'] = null
         if (!fields['status']) fields['status'] = Locate_Status.NEW
         return fields
     }

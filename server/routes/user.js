@@ -54,10 +54,9 @@ class User extends Root {
                 location
             }
         }
-        console.log("set",update)
         Model.User.modified({_id:ObjectID(id)},update)
         .then(response=>{
-            this.HandleResult(res,200,"OK")
+            this.HandleResult(res,200,response)
         })
         .catch(err=>{
             throw err

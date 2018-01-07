@@ -2,7 +2,7 @@ import React from 'react'
 import Notifier from 'react-notification-system'
 import { Login,MainActivity } from '../'
 import Notification from 'react-web-notification'
-class Home extends React.PureComponent {
+class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
