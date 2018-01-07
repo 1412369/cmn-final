@@ -3,14 +3,29 @@ const Model = require('../database')
 const {
     Locate_Status
 } = require('../config')
+const {ObjectID} = require('mongodb')
 class Locate extends Root {
     constructor() {
         super()
         this.router.get('/', this.CheckStatus.bind(this))
         this.router.post('/address', this.PostAddress.bind(this))
         this.router.get('/address', this.GetAddress.bind(this))
-
+        this.router.put('/location/:id',this.PutLocation.bind(this))
         return this.router
+    }
+    PutLocation(req,res,next){
+        const update ={
+            $set:{
+                location:req.body.location
+            }
+        }
+        Model.Locate.modified({_id:ObjectID(req.params.id)},update)
+        .then(response=>{
+            this.HandleResult(res,200,response)
+        })
+        .catch(err=>{
+            throw err
+        })
     }
     CheckStatus(req, res, next) {
         Model.Locate.check((err, result) => {
