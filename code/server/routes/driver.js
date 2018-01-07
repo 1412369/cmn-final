@@ -2,10 +2,14 @@ const Root = require('./root')
 const Model = require('../database')
 const faker = require('faker')
 const Promise = require('bluebird')
+const {
+    ObjectID
+} = require('mongodb')
 const default_position = {
     lat: 10.7666851,
     lng: 106.641758
 };
+
 function generateDriver(pos) {
     return {
         name: faker.name.findName(),
@@ -17,6 +21,7 @@ function generateDriver(pos) {
         }
     }
 }
+
 function generateMotoBikeLocation(location) {
     const d = Promise.defer()
     const position_arr = []
@@ -49,18 +54,86 @@ function generateWorker(default_position) {
 class Driver extends Root {
     constructor() {
         super()
-        this.router.get('/',this.GetDrivers.bind(this))
+        this.router.get('/', this.GetDrivers.bind(this))
+        this.router.put('/pair/:id', this.PairDriver.bind(this))
+        this.router.put('/unpair/:id', this.UnPairDriver.bind(this))
         this.router.get('/generate', this.GenerateDriver.bind(this))
         return this.router
     }
-    GetDrivers(req,res,next){
-        Model.User.find({status:"free",online:true})
-        .then(drivers=>{
-            this.HandleResult(res,200,drivers)
-        })
-        .catch(err=>{
-            throw err
-        })
+    UnPairDriver(req, res, next) {
+        const {
+            driver
+        } = req.body.payload
+        const _id = req.params.id
+        Model.Locate.modified({
+                _id: ObjectID(_id)
+            }, {$set:{status:"done"}}).then(response => {
+                return Model.User.modified({
+                    _id: ObjectID(driver._id)
+                }, {
+                    $set: {
+                        status: "free"
+                    }
+                })
+            })
+            .then(result => {
+                
+                this.HandleResult(res, 200, result)
+            })
+            .catch(err => {
+                throw err
+            })
+    }
+    PairDriver(req, res, next) {
+        let results ={}
+        const {
+            driver,
+            locator
+        } = req.body.payload
+        const _id = req.params.id
+        const update = {
+            $set: {
+                driver: driver,
+                locator: locator,
+                status: "moving"
+            }
+        }
+        Model.Locate.modified({
+                _id: ObjectID(_id)
+            }, update).then(response => {
+                results.location = response
+                return Model.User.modified({
+                    _id: ObjectID(driver._id)
+                }, {
+                    $set: {
+                        status: "busy",
+                        point:{
+                            _id:response._id,
+                            location:response.location
+                        }
+                    }
+                })
+            })
+            .then(response => {
+                results.driver = response
+                this.HandleResult(res, 200, results)
+            })
+            .catch(err => {
+                throw err
+            })
+
+    }
+    GetDrivers(req, res, next) {
+        Model.User.find({
+                status: "free",
+                online: true
+            })
+            .then(drivers => {
+                this.HandleResult(res, 200, drivers)
+            })
+            .catch(err => {
+                throw err
+            })
     }
     GenerateDriver(req, res, next) {
         generateWorker(default_position)
