@@ -100,6 +100,42 @@ class MainActivity extends React.PureComponent {
                 })
 
             })
+            socket.on(Socket.Driver.DRIVER_FINISH, (payload) => {
+                console.log("asdfasdfasdf11111")
+                GetDrivers().then(response => {
+                    const drivers = response.data.message
+                    console.log("drivers_get",drivers)
+                    this.setState({
+                        ...this.state,
+                        drivers,
+                        location: {},
+                        closer_driver: null,
+                        radius: 0,
+                        status: "none"
+                    })
+                }).catch(err => {
+                    throw err
+                })
+
+            })
+            socket.on(Socket.Driver.DRIVER_DENIED, (payload) => {
+                GetDrivers().then(response => {
+                    const drivers = response.data.message
+                    const {notifyId} = this.state
+                    toast.dismiss(notifyId)
+                    this.setState({
+                        ...this.state,
+                        drivers,
+                        location: {},
+                        closer_driver: null,
+                        radius: 0,
+                        status: "paired"
+                    })
+                }).catch(err => {
+                    throw err
+                })
+
+            })
             socket.on(Socket.Driver.DRIVER_MOVE, (data) => {
                 console.log("driver_move", data)
                 let new_update = this.state.drivers.map(driver => {

@@ -5,18 +5,39 @@ import {
     ExpansionList, TabsContainer, Tabs, Tab, Button, SelectField
 } from 'react-md'
 import Clock from 'react-countdown-clock'
-class LeftActivity extends React.PureComponent {
-    state = {
-        isMarkerShown: false,
+import { UpdateStatus } from './api.js'
+import {Socket} from '../Config/config.js'
+class LeftActivity extends React.Component {
+    constructor(props){
+        super(props)
+        this.state = {
+            isMarkerShown: false,
+        }
+    }
+    onPick() {
+        const { point } = this.props
+        UpdateStatus(point._id, {status:"moving"})
+    }
+    onDrop() {
+        const { locater,driver,updatePoint ,socket,point} = this.props
+        UpdateStatus(point._id, { status: "finish", driver_id: driver._id})
+        updatePoint(null)
+        const data={
+            driver:driver,
+            locater:locater
+        }
+        console.log("onDrpos",socket)
+        socket.emit(Socket.Driver.DRIVER_FINISH,data)
     }
     render() {
-        const { address = "", name = "", phone = "", type = "", note = "" } = this.props.location
+        // const { address = "", name = "", phone = "", type = "", note = "" } = this.props.location
+        const point = this.props.point && this.props.point
         return (
             <Grid>
                 <Cell size={8} phoneSize={12}>
                     <TextField
                         label="Địa chỉ khách:"
-                        value={address}
+                        value={point ? point.address : ""}
                         disabled
                         leftIcon={<FontIcon>add_location</FontIcon>}
                     />
@@ -25,14 +46,14 @@ class LeftActivity extends React.PureComponent {
                     <TextField
                         label="Loại xe:"
                         disabled
-                        value={type}
+                        value={point ? point.type : ""}
                         leftIcon={<FontIcon>directions_bike</FontIcon>}
                     />
                 </Cell>
                 <Cell size={12} phoneSize={12}>
                     <TextField
                         label="Ghi chú:"
-                        value={address}
+                        value={point ? point.note : ""}
                         disabled
                         leftIcon={<FontIcon>note</FontIcon>}
                     />
@@ -40,28 +61,30 @@ class LeftActivity extends React.PureComponent {
                 <Cell size={12} phoneSize={12}>
                     <TextField
                         label="Số điện thoại:"
-                        value={address}
+                        value={point ? point.phone : ""}
                         disabled
                         leftIcon={<FontIcon>note</FontIcon>}
                     />
                 </Cell>
                 <Cell size={6}>
                     <Button
-                        disabled
+                        disabled={!point}
                         raised
                         primary
+                        onClick={this.onPick.bind(this)}
                         swapTheming
                     >Đón Khách</Button>
                 </Cell>
                 <Cell size={6}>
                     <Button
                         raised
-                        disabled
+                        onClick={this.onDrop.bind(this)}
+                        disabled={!point}
                         primary
                         swapTheming
                     >Trả khách</Button>
                 </Cell>
-                
+
             </Grid>
 
         )

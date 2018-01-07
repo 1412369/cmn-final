@@ -101,6 +101,7 @@ class Routing extends PureComponent {
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
   changeStatus(driver) { this.setState({ ...this.state, isLogged: true, driver }) }
+  updatePoint(point){this.setState({...this.state,point})}
   updateDriver(driver) { this.setState({ ...this.state, driver }) }
   showDrawer = () => {
     this.setState({ visible: true });
@@ -196,6 +197,7 @@ class Routing extends PureComponent {
                 <Home
                   {...this.state} {...this.props}
                   changeStatus={this.changeStatus}
+                  updatePoint={this.updatePoint.bind(this)}
                   changeAsk={this.changeAsk.bind(this)}
                   onAccept={this.onAccept.bind(this)}
                   onDenied={this.onDenied.bind(this)}

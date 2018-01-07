@@ -95,7 +95,7 @@ class Driver extends Root {
             $set: {
                 driver: driver,
                 locater: locater,
-                status: "moving"
+                status: "paired"
             }
         }
         Model.Locate.modified({
