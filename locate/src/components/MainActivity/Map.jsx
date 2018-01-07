@@ -250,13 +250,13 @@ class Map extends React.Component {
     const { map, center } = this.state
   }
   render() {
-
+    console.log("this.oldstate",this.state)
     const {
       center,
       address,
       filter_drivers,
       filter_drivers_with_dist } = this.state
-    const { radius, closer_driver } = this.props
+    const { radius, closer_driver,showMarker } = this.props
     const direct = closer_driver && closer_driver.result
     return (
       <div>
@@ -297,7 +297,7 @@ class Map extends React.Component {
                   : ""
               }
               {
-                direct ? <DirectionsRenderer
+                radius!=0 && direct ? <DirectionsRenderer
                   directions={direct}
                   options={{
                     suppressMarkers: true
@@ -306,7 +306,7 @@ class Map extends React.Component {
               }
 
               {
-                Object.keys(center).length > 0 ?
+                showMarker ?
                   <Marker
                     position={center}
                     defaultVisible={true}

@@ -20,18 +20,21 @@ class MainActivity extends React.PureComponent {
             drivers: [],
             radius: 0,
             notifyId:null,
-            closer_driver: ""
+            closer_driver: null,
+            showMarker:false,
         }
         this.fetchDriver = this.fetchDriver.bind(this)
         this.updateDrivers = this.updateDrivers.bind(this)
     }
+    changeShowMarker(){this.setState({...this.state,showMarker:!this.state.showMarker})}
     onExpandToggle(expanded) {
         console.log(expanded)
     }
     updateGeoCode(location) {
         this.setState({
             ...this.state,
-            location
+            location,
+            showMarker:true
         })
     }
     updateCloserDriver(closer_driver) {
@@ -93,6 +96,7 @@ class MainActivity extends React.PureComponent {
                         location: {},
                         closer_driver: null,
                         radius: 0,
+                        showMarker:false,
                         status: "paired"
                     })
                 }).catch(err => {
@@ -101,7 +105,6 @@ class MainActivity extends React.PureComponent {
 
             })
             socket.on(Socket.Driver.DRIVER_FINISH, (payload) => {
-                console.log("asdfasdfasdf11111")
                 GetDrivers().then(response => {
                     const drivers = response.data.message
                     console.log("drivers_get",drivers)
@@ -110,6 +113,7 @@ class MainActivity extends React.PureComponent {
                         drivers,
                         location: {},
                         closer_driver: null,
+                        showMarker:false,
                         radius: 0,
                         status: "none"
                     })
@@ -182,6 +186,7 @@ class MainActivity extends React.PureComponent {
                 <Cell size={8} style={{ padding: "0px", margin: "0px" }}>
                     <MyMapComponent
                         {...this.state}
+                        changeShowMarker={this.changeShowMarker.bind(this)}
                         socket={this.props.socket}
                         fetchDriver={this.fetchDriver}
                         updateDrivers={this.updateDrivers}

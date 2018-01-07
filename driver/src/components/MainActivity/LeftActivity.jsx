@@ -26,7 +26,6 @@ class LeftActivity extends React.Component {
             driver:driver,
             locater:locater
         }
-        console.log("onDrpos",socket)
         socket.emit(Socket.Driver.DRIVER_FINISH,data)
     }
     render() {
