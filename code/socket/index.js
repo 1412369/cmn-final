@@ -10,7 +10,9 @@ const {
 const {
     OfflineDriver,
     OnlineDriver,
-    Pair
+    Pair,
+    ChangeDriverStatus
+
 } = require('./api')
 let Pointers = new Map()
 let Drivers = new Map()
@@ -64,36 +66,55 @@ io.on('connection', (socket) => {
         }
     })
     // Pair Driver With Location
-    socket.on(Driver.DRIVER_MOVE,(payload)=>{
-        console.log("move",payload)
+    socket.on(Driver.DRIVER_MOVE, (payload) => {
         const driver = Drivers.get(payload.email)
-        console.log(Drivers,driver)
         for (let [key, value] of Locaters) {
             io.to(value.id).emit(Driver.DRIVER_MOVE, payload)
         }
-        io.to(driver.id).emit(Driver.DRIVER_MOVE,payload)
+        io.to(driver.id).emit(Driver.DRIVER_MOVE, payload)
     })
     socket.on(Locate.PAIR, (payload) => {
         const driver_value = Drivers.get(payload.driver.email)
-        const locator_value = Locaters.get(payload.locator.email)
-        const data = {
-            driver: payload.driver,
-            locator: payload.locator
-        }
-        Pair(data, payload._id).then(response => {
-            io.to(driver_value.id).emit(Locate.PAIR,response.data.message)
-            io.to(locator_value.id).emit(Locate.PAIR)
-            Drivers.set(driver_value.email, {
+        io.to(driver_value.id).emit(Locate.PAIR, payload)
+    })
+    socket.on(Driver.DRIVER_ACCEPT, (payload) => {
+        const driver_value = Drivers.get(payload.driver.email)
+        const locater_value = Locaters.get(payload.locater.email)
+        Pair(payload, payload.point._id).then(response => {
+            io.to(locater_value.id).emit(Driver.DRIVER_ACCEPT, response.data.message)
+            Drivers.set(payload.driver.email, {
                 id: driver_value.id,
                 status: "busy"
             })
-            Locaters.set(locator_value.email, {
-                id: locator_value.id,
+            Locaters.set(payload.locater.email, {
+                id: locater_value.id,
                 status: "free"
             })
         }).catch(err => {
-            throw err
+            console.log(err)
         })
+    })
+    socket.on(Driver.DRIVER_DENIED, (payload) => {
+
+    })
+    socket.on(Driver.DRIVER_FINISH, (payload) => {
+        const driver_value = Drivers.get(payload.driver.email)
+        Drivers.set(payload.driver.email, {
+            id: driver_value.id,
+            status: "free"
+        })
+        console.log("finishhhhhhhhh",payload)
+        ChangeDriverStatus(payload.driver._id)
+            .then(response => {
+                console.log("response",response)
+                for (let [key, value] of Locaters) {
+                    io.to(value.id).emit(Driver.DRIVER_FINISH, payload)
+                }
+            })
+            .catch(err => {
+                console.log("errr",err)
+                throw err
+            })
 
     })
     socket.on("disconnect", (reason) => {

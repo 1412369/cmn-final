@@ -36,6 +36,7 @@ class User extends Root {
         this.router.put('/online', this.Online.bind(this))
         this.router.put('/offline', this.Offline.bind(this))
         this.router.post('/register', this.Register.bind(this))
+        this.router.put('/status/:id', this.PutUserStatus.bind(this))
         this.router.get('/me', this.GetMe.bind(this))
         return this.router
 
@@ -46,21 +47,39 @@ class User extends Root {
             res.send("user connect success!")
         })
     }
-    PutLocation(req,res,next){
-        const id = req.params.id
-        const location = JSON.parse(req.body.location)
-        const update = {
-            $set:{
-                location
+    PutUserStatus(req, res, next) {
+        console.log("start update here")
+        Model.User.modified({
+            _id: ObjectID(req.params.id)
+        }, {
+            $set: {
+                status: "free"
             }
-        }
-        Model.User.modified({_id:ObjectID(id)},update)
-        .then(response=>{
-            this.HandleResult(res,200,response)
+        })
+        .then(result=>{
+            this.HandleResult(res,200,"OK")
         })
         .catch(err=>{
             throw err
         })
+    }
+    PutLocation(req, res, next) {
+        const id = req.params.id
+        const location = JSON.parse(req.body.location)
+        const update = {
+            $set: {
+                location
+            }
+        }
+        Model.User.modified({
+                _id: ObjectID(id)
+            }, update)
+            .then(response => {
+                this.HandleResult(res, 200, response)
+            })
+            .catch(err => {
+                throw err
+            })
     }
     GetMe(req, res, next) {
         const accesstoken = req.headers['x-accesstoken']
@@ -126,7 +145,7 @@ class User extends Root {
             }, update)
             .then(result => {
                 if (result) {
-                    this.HandleResult(res, 200,result)
+                    this.HandleResult(res, 200, result)
                 } else {
                     this.HandleResult(res, 304, "Update failed")
                 }
@@ -180,7 +199,7 @@ class User extends Root {
             })
             .then(result => {
                 params.password = result
-                if (params.role = "driver") {
+                if (params.role == "driver") {
                     const i = faker.random.number(1, 1000)
                     let fix_lat = i % 2 == 0 ? -1 : 1
                     let fix_lng = i % 2 != 0 ? -1 : 1
