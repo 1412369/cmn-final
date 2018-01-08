@@ -107,11 +107,11 @@ class MainActivity extends React.PureComponent {
             socket.on(Socket.Driver.DRIVER_FINISH, (payload) => {
                 GetDrivers().then(response => {
                     const drivers = response.data.message
-                    console.log("drivers_get",drivers)
+                    const {location} = this.state
                     this.setState({
                         ...this.state,
                         drivers,
-                        location: {},
+                        location: location.status==="locating"?location:{},
                         closer_driver: null,
                         showMarker:false,
                         radius: 0,
