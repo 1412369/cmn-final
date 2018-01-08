@@ -45,7 +45,7 @@ class Map extends React.Component {
   }
   componentWillReceiveProps(nextProps) {
     const { geocoder, directionsService } = this.state
-    const { updateCloserDriver } = this.props
+    const { updateCloserDriver,updateGeoCode } = this.props
     const address = nextProps.location && nextProps.location.address
     const drivers = nextProps.drivers && nextProps.drivers
     const radius = nextProps.radius && nextProps.radius
@@ -57,6 +57,9 @@ class Map extends React.Component {
         if (status === 'OK') {
           let center = results[0].geometry.location
           UpdateGeocode(JSON.parse(JSON.stringify(center)),this.props.location._id)
+          .then(response=>{
+            updateGeoCode(response.data.message)
+          })
           if (drivers.length > 0) {
             this.filterDriversWithRadius(drivers, radius)
               .then(drivers => {
@@ -154,8 +157,6 @@ class Map extends React.Component {
         .catch(err => {
           console.error(err)
         })
-
-
     }
   }
   componentDidMount() {
@@ -249,13 +250,13 @@ class Map extends React.Component {
     const { map, center } = this.state
   }
   render() {
-
+    console.log("this.oldstate",this.state)
     const {
       center,
       address,
       filter_drivers,
       filter_drivers_with_dist } = this.state
-    const { radius, closer_driver } = this.props
+    const { radius, closer_driver,showMarker } = this.props
     const direct = closer_driver && closer_driver.result
     return (
       <div>
@@ -296,7 +297,7 @@ class Map extends React.Component {
                   : ""
               }
               {
-                direct ? <DirectionsRenderer
+                radius!=0 && direct ? <DirectionsRenderer
                   directions={direct}
                   options={{
                     suppressMarkers: true
@@ -305,7 +306,7 @@ class Map extends React.Component {
               }
 
               {
-                Object.keys(center).length > 0 ?
+                showMarker ?
                   <Marker
                     position={center}
                     defaultVisible={true}

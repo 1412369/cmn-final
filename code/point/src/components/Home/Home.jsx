@@ -83,20 +83,7 @@ class Home extends React.PureComponent {
         const {isLogged,changeStatus} = this.props
         return (
             <div>
-                {isLogged ? <MainActivity {...this.props}/> : <Login {...this.props} changeStatus={changeStatus}/>}
-                <Notification
-                    ignore={this.state.ignore && this.state.title !== ''}
-                    notSupported={this.handleNotSupported.bind(this)}
-                    onPermissionGranted={this.handlePermissionGranted.bind(this)}
-                    onPermissionDenied={this.handlePermissionDenied.bind(this)}
-                    onShow={this.handleNotificationOnShow.bind(this)}
-                    onClick={this.handleNotificationOnClick.bind(this)}
-                    onClose={this.handleNotificationOnClose.bind(this)}
-                    onError={this.handleNotificationOnError.bind(this)}
-                    timeout={5000}
-                    title={this.state.title}
-                    options={this.state.options}
-                />
+                {isLogged ? <MainActivity /> : <Login {...this.props.location} changeStatus={changeStatus}/>}
             </div>
         )
     }

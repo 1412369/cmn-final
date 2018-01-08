@@ -1,6 +1,7 @@
 const Locate_Status = {
     NEW:"new",
-    START:"start",
+    PAIRED:"paired",
+    MOVING:"moving",
     FINISH:"finish"
 }
 const Driver_Status={

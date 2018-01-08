@@ -14,7 +14,8 @@ const Socket = {
         OFFLINE: "driver_offline",
         DRIVER_MOVE:"driver_move",
         DRIVER_ACCEPT:"drover_accept",
-        DRIVER_DENIED:"driver_denied"
+        DRIVER_DENIED:"driver_denied",
+        DRIVER_FINISH:"driver_finish"
     },
     Point:{
 

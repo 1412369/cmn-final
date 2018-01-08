@@ -14,7 +14,7 @@ const {
     ChangeDriverStatus
 
 } = require('./api')
-let Pointers = new Map()
+let Pointers = null
 let Drivers = new Map()
 let Locaters = new Map()
 let Phoners = new Map()
@@ -37,7 +37,9 @@ io.on('connection', (socket) => {
             status: "free"
         })
     })
-    socket.on(Client.POINT, (client_id) => {})
+    socket.on(Client.POINT, (client_id) => {
+        Pointers = socket.id
+    })
     socket.on(Client.LOCATE, (client_id) => {
         console.log(`Connected: ${client_id},${socket.id}`)
         Locaters.set(client_id, {
@@ -54,6 +56,9 @@ io.on('connection', (socket) => {
     })
     //==============Data tranfer=========== 
     socket.on(Phone.NEW_ADDRESS, (address) => {
+        if (Pointers) {
+            io.to(Pointers).emit("UPDATE","OK")
+        }
         for (let [key, value] of Locaters) {
             if (value.status === "free") {
                 io.to(value.id).emit(Phone.NEW_ADDRESS, address)
@@ -77,6 +82,11 @@ io.on('connection', (socket) => {
         const driver_value = Drivers.get(payload.driver.email)
         io.to(driver_value.id).emit(Locate.PAIR, payload)
     })
+    socket.on("LOCATING", payload => {
+        if (Pointers) {
+            io.to(Pointers).emit("UPDATE","OK")
+        }
+    })
     socket.on(Driver.DRIVER_ACCEPT, (payload) => {
         const driver_value = Drivers.get(payload.driver.email)
         const locater_value = Locaters.get(payload.locater.email)
@@ -90,6 +100,9 @@ io.on('connection', (socket) => {
                 id: locater_value.id,
                 status: "free"
             })
+            if (Pointers) {
+                io.to(Pointers).emit("UPDATE","OK")
+            }
         }).catch(err => {
             console.log(err)
         })
@@ -97,22 +110,29 @@ io.on('connection', (socket) => {
     socket.on(Driver.DRIVER_DENIED, (payload) => {
 
     })
+    socket.on("UPDATE", payload => {
+        if (Pointers) {
+            io.to(Pointers).emit("UPDATE","OK")
+        }
+    })
     socket.on(Driver.DRIVER_FINISH, (payload) => {
         const driver_value = Drivers.get(payload.driver.email)
         Drivers.set(payload.driver.email, {
             id: driver_value.id,
             status: "free"
         })
-        console.log("finishhhhhhhhh",payload)
         ChangeDriverStatus(payload.driver._id)
             .then(response => {
-                console.log("response",response)
                 for (let [key, value] of Locaters) {
                     io.to(value.id).emit(Driver.DRIVER_FINISH, payload)
                 }
+                console.log("pointer", Pointers)
+                if (Pointers) {
+                    io.to(Pointers).emit("UPDATE","OK")
+                }
             })
             .catch(err => {
-                console.log("errr",err)
+                console.log("errr", err)
                 throw err
             })
 

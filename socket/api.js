@@ -18,7 +18,6 @@ const Pair = (payload, id) =>
         payload
     })
 const ChangeDriverStatus = (id) =>{
-    console.log("id",id)
     return fetch.put(`/users/status/${id}`,{
         message:"OK"
     })
