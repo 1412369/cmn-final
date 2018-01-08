@@ -9,7 +9,7 @@ const {
 class Locate extends Root {
     constructor() {
         super()
-        this.router.get('/', this.CheckStatus.bind(this))
+        this.router.get('/', this.GetAllLocation.bind(this))
         this.router.post('/address', this.PostAddress.bind(this))
         this.router.get('/address', this.GetAddress.bind(this))
         this.router.put('/status/:id', this.PutStatus.bind(this))
@@ -37,7 +37,8 @@ class Locate extends Root {
     PutLocation(req, res, next) {
         const update = {
             $set: {
-                location: req.body.location
+                location: req.body.location,
+                status:"locating"
             }
         }
         Model.Locate.modified({
@@ -50,10 +51,14 @@ class Locate extends Root {
                 throw err
             })
     }
-    CheckStatus(req, res, next) {
-        Model.Locate.check((err, result) => {
-            if (err) throw err
-            res.send("locate connect success!")
+    GetAllLocation(req, res, next) {
+        Model.Locate.find({})
+        .then(response=>{
+            this.HandleResult(res,200,response)
+        })
+        .catch(err=>{
+            throw err
+            this.HandleErr(res,400,err)
         })
     }
     GetAddress(req, res, next) {

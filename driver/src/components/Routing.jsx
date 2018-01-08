@@ -179,7 +179,7 @@ class Routing extends PureComponent {
               onClick={this.handleNotificationOnClick.bind(this)}
               onClose={this.handleNotificationOnClose.bind(this)}
               onError={this.handleNotificationOnError.bind(this)}
-              timeout={5000}
+              timeout={3000}
               title={"Có khách kìa đại ca <3!"}
               options={options}
             /> : ""

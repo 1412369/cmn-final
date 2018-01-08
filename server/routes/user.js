@@ -199,7 +199,7 @@ class User extends Root {
             })
             .then(result => {
                 params.password = result
-                if (params.role = "driver") {
+                if (params.role == "driver") {
                     const i = faker.random.number(1, 1000)
                     let fix_lat = i % 2 == 0 ? -1 : 1
                     let fix_lng = i % 2 != 0 ? -1 : 1

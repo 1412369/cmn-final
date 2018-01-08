@@ -66,8 +66,8 @@ class Map extends React.Component {
     })
   }
   componentWillReceiveProps(nextProps) {
-    const driver = nextProps.driver && nextProps.driver && nextProps.driver.location
-    const point = nextProps.point && nextProps.point && nextProps.point.location
+    const driver = nextProps.driver && nextProps.driver.location
+    const point = nextProps.point && nextProps.point.location
     console.log(driver, point)
     const { directionsService } = this.state
     if (driver && point) {

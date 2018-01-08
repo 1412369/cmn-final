@@ -45,7 +45,7 @@ class Map extends React.Component {
   }
   componentWillReceiveProps(nextProps) {
     const { geocoder, directionsService } = this.state
-    const { updateCloserDriver,updateGeoCode } = this.props
+    const { updateCloserDriver,updateGeoCode,socket } = this.props
     const address = nextProps.location && nextProps.location.address
     const drivers = nextProps.drivers && nextProps.drivers
     const radius = nextProps.radius && nextProps.radius
@@ -58,6 +58,7 @@ class Map extends React.Component {
           let center = results[0].geometry.location
           UpdateGeocode(JSON.parse(JSON.stringify(center)),this.props.location._id)
           .then(response=>{
+            socket.emit("UPDATE")
             updateGeoCode(response.data.message)
           })
           if (drivers.length > 0) {

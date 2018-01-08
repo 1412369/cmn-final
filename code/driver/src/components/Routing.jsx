@@ -46,23 +46,28 @@ class Routing extends PureComponent {
       driver: null,
       ask: false,
       point: null,
+      locater: null,
       socket: null
     }
     this.changeStatus = this.changeStatus.bind(this)
   }
   onAccept() {
-    const { socket } = this.state
+    const { socket, point, driver, locater } = this.state
+    const payload = {
+      point, driver, locater
+    }
+    socket.emit(Socket.Driver.DRIVER_ACCEPT, payload)
     this.setState({ ...this.state, ask: false })
     console.log("accept")
   }
   onDenied() {
     const { socket } = this.state
-    this.setState({ ...this.state, ask: false, point: null })
+    this.setState({ ...this.state, ask: false, locater: null, point: null })
     console.log("denied")
   }
   onHide() {
     const { socket } = this.state
-    this.setState({ ...this.state, point: null, ask: false })
+    this.setState({ ...this.state, point: null, locater: null, ask: false })
   }
   componentDidMount() {
     // Need to set the renderNode since the drawer uses an overlay
@@ -78,20 +83,25 @@ class Routing extends PureComponent {
         .catch(err => {
           throw err
         })
-      socket.on(Socket.Locate.PAIR, (data) => {
-        this.setState({ ...this.state, point: data.location, ask: true })
-
-      })
-      socket.on(Socket.Driver.DRIVER_MOVE, (driver) => {
-        this.setState({ ...this.state, driver })
-      })
     } else {
       this.setState(...this.state, { socket })
     }
+    socket.on(Socket.Locate.PAIR, (data) => {
+      this.setState({
+        ...this.state,
+        point: data.point,
+        locater: data.locater,
+        ask: true
+      })
+    })
+    socket.on(Socket.Driver.DRIVER_MOVE, (driver) => {
+      this.setState({ ...this.state, driver })
+    })
 
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
-  changeStatus(driver) { this.setState(...this.state, { isLogged: true, driver }) }
+  changeStatus(driver) { this.setState({ ...this.state, isLogged: true, driver }) }
+  updatePoint(point){this.setState({...this.state,point})}
   updateDriver(driver) { this.setState({ ...this.state, driver }) }
   showDrawer = () => {
     this.setState({ visible: true });
@@ -141,7 +151,7 @@ class Routing extends PureComponent {
   }
   render() {
     const { location } = this.props;
-    console.log("after",this.state)
+    console.log("after", this.state)
     const _user = JSON.parse(localStorage.getItem("user"))
     const { visible, isLogged, driver, point } = this.state;
     const options = {
@@ -169,7 +179,7 @@ class Routing extends PureComponent {
               onClick={this.handleNotificationOnClick.bind(this)}
               onClose={this.handleNotificationOnClose.bind(this)}
               onError={this.handleNotificationOnError.bind(this)}
-              timeout={5000}
+              timeout={3000}
               title={"Có khách kìa đại ca <3!"}
               options={options}
             /> : ""
@@ -187,6 +197,7 @@ class Routing extends PureComponent {
                 <Home
                   {...this.state} {...this.props}
                   changeStatus={this.changeStatus}
+                  updatePoint={this.updatePoint.bind(this)}
                   changeAsk={this.changeAsk.bind(this)}
                   onAccept={this.onAccept.bind(this)}
                   onDenied={this.onDenied.bind(this)}
