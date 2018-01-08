@@ -4,121 +4,88 @@ import {
     Grid, Cell, ExpansionPanel, Paper, TextField, FontIcon,
     ExpansionList, TabsContainer, Tabs, Tab, Button, SelectField
 } from 'react-md'
-
-class LeftActivity extends React.PureComponent {
-    state = {
-        isMarkerShown: false,
+import Clock from 'react-countdown-clock'
+import { UpdateStatus } from './api.js'
+import {Socket} from '../Config/config.js'
+class LeftActivity extends React.Component {
+    constructor(props){
+        super(props)
+        this.state = {
+            isMarkerShown: false,
+        }
+    }
+    onPick() {
+        const { point } = this.props
+        UpdateStatus(point._id, {status:"moving"})
+    }
+    onDrop() {
+        const { locater,driver,updatePoint ,socket,point} = this.props
+        UpdateStatus(point._id, { status: "finish", driver_id: driver._id})
+        updatePoint(null)
+        const data={
+            driver:driver,
+            locater:locater
+        }
+        socket.emit(Socket.Driver.DRIVER_FINISH,data)
     }
     render() {
-        const {address="",name="",phone="",type="",note=""}= this.props.location
+        // const { address = "", name = "", phone = "", type = "", note = "" } = this.props.location
+        const point = this.props.point && this.props.point
         return (
-            <ExpansionList>
-                <ExpansionPanel
-                    label="Địa chỉ khách" footer={null}
-                    defaultExpanded={true}
-                >
-                    {/* <hr /> */}
-                    <Grid>
-                        <Cell size={8}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="Địa chỉ khách:"
-                                value={address}
-                                disabled
-                                leftIcon={<FontIcon>add_location</FontIcon>}
-                            />
-                        </Cell>
-                        <Cell size={4}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="Loại xe:"
-                                disabled
-                                value={type}
-                                leftIcon={<FontIcon>directions_bike</FontIcon>}
-                            />
-                        </Cell>
-                    </Grid>
-                    <Grid>
-                        <Cell size={6}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="SĐT:"
-                                disabled
-                                value={phone}
-                                leftIcon={<FontIcon>phone</FontIcon>}
-                            />
-                        </Cell>
-                        <Cell size={6}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="Tên:"
-                                value={name}                                
-                                disabled
-                                leftIcon={<FontIcon>accessibility</FontIcon>}
-                            />
-                        </Cell>
-                    </Grid>
-                    <Cell size={12}>
-                        <TextField
-                            id="disabled-floating-label-multiline-field"
-                            label="Ghi chú:"
-                            disabled
-                            value={note}
-                            leftIcon={<FontIcon>note</FontIcon>}
-                        />
-                    </Cell>
-                </ExpansionPanel>
-                <ExpansionPanel
-                    label="Tài xế" footer={null}
-                    defaultExpanded={true}                    
-                >
-                    {/* <hr /> */}
-                    <Grid>
-                        <Cell size={8}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="Địa chỉ khách:"
-                                disabled
-                                leftIcon={<FontIcon>add_location</FontIcon>}
-                            />
-                        </Cell>
-                        <Cell size={4}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="Loại xe:"
-                                disabled
-                                leftIcon={<FontIcon>directions_bike</FontIcon>}
-                            />
-                        </Cell>
-                    </Grid>
-                    <Grid>
-                        <Cell size={6}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="SĐT:"
-                                disabled
-                                leftIcon={<FontIcon>phone</FontIcon>}
-                            />
-                        </Cell>
-                        <Cell size={6}>
-                            <TextField
-                                id="disabled-floating-label-multiline-field"
-                                label="Tên:"
-                                disabled
-                                leftIcon={<FontIcon>accessibility</FontIcon>}
-                            />
-                        </Cell>
-                    </Grid>
-                    <Cell size={12}>
-                        <TextField
-                            id="disabled-floating-label-multiline-field"
-                            label="Ghi chú:"
-                            disabled
-                            leftIcon={<FontIcon>note</FontIcon>}
-                        />
-                    </Cell>
-                </ExpansionPanel>
-            </ExpansionList>
+            <Grid>
+                <Cell size={8} phoneSize={12}>
+                    <TextField
+                        label="Địa chỉ khách:"
+                        value={point ? point.address : ""}
+                        disabled
+                        leftIcon={<FontIcon>add_location</FontIcon>}
+                    />
+                </Cell>
+                <Cell size={4} phoneSize={12}>
+                    <TextField
+                        label="Loại xe:"
+                        disabled
+                        value={point ? point.type : ""}
+                        leftIcon={<FontIcon>directions_bike</FontIcon>}
+                    />
+                </Cell>
+                <Cell size={12} phoneSize={12}>
+                    <TextField
+                        label="Ghi chú:"
+                        value={point ? point.note : ""}
+                        disabled
+                        leftIcon={<FontIcon>note</FontIcon>}
+                    />
+                </Cell>
+                <Cell size={12} phoneSize={12}>
+                    <TextField
+                        label="Số điện thoại:"
+                        value={point ? point.phone : ""}
+                        disabled
+                        leftIcon={<FontIcon>note</FontIcon>}
+                    />
+                </Cell>
+                <Cell size={6}>
+                    <Button
+                        disabled={!point}
+                        raised
+                        primary
+                        onClick={this.onPick.bind(this)}
+                        swapTheming
+                    >Đón Khách</Button>
+                </Cell>
+                <Cell size={6}>
+                    <Button
+                        raised
+                        onClick={this.onDrop.bind(this)}
+                        disabled={!point}
+                        primary
+                        swapTheming
+                    >Trả khách</Button>
+                </Cell>
+
+            </Grid>
+
         )
     }
 };

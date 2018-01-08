@@ -2,7 +2,7 @@ import React from 'react'
 import Notifier from 'react-notification-system'
 import { Login,MainActivity } from '../'
 import Notification from 'react-web-notification'
-class Home extends React.PureComponent {
+class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -83,7 +83,7 @@ class Home extends React.PureComponent {
         const {isLogged,changeStatus} = this.props
         return (
             <div>
-                {isLogged ? <MainActivity {...this.props}/> : <Login {...this.props.location} changeStatus={changeStatus}/>}
+                {isLogged ? <MainActivity {...this.props}/> : <Login {...this.props} changeStatus={changeStatus}/>}
                 <Notification
                     ignore={this.state.ignore && this.state.title !== ''}
                     notSupported={this.handleNotSupported.bind(this)}

@@ -12,12 +12,16 @@ const Socket = {
     Driver: {
         ONLINE: "driver_active",
         OFFLINE: "driver_offline",
+        DRIVER_MOVE:"driver_move",
+        DRIVER_ACCEPT:"drover_accept",
+        DRIVER_DENIED:"driver_denied",
+        DRIVER_FINISH:"driver_finish"
     },
     Point:{
 
     },
     Locate: {
-        DONE_ADDRESS: "locate_done"
+        PAIR: "pair_driver_with_locate",
     },
     Phone: {
         NEW_ADDRESS: "phone_new",

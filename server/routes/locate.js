@@ -3,14 +3,52 @@ const Model = require('../database')
 const {
     Locate_Status
 } = require('../config')
+const {
+    ObjectID
+} = require('mongodb')
 class Locate extends Root {
     constructor() {
         super()
         this.router.get('/', this.CheckStatus.bind(this))
         this.router.post('/address', this.PostAddress.bind(this))
         this.router.get('/address', this.GetAddress.bind(this))
-
+        this.router.put('/status/:id', this.PutStatus.bind(this))
+        this.router.put('/location/:id', this.PutLocation.bind(this))
         return this.router
+    }
+    PutStatus(req, res, next) {
+        const id = req.params.id
+        const update = {
+            $set: {
+                status: req.body.status
+            }
+        }
+        Model.Locate.modified({
+                _id: ObjectID(id)
+            }, update)
+            .then(response => {
+                this.HandleResult(res, 200, response)
+            })
+            .catch(err => {
+                throw err
+                this.HandleErr(res, 400, err)
+            })
+    }
+    PutLocation(req, res, next) {
+        const update = {
+            $set: {
+                location: req.body.location
+            }
+        }
+        Model.Locate.modified({
+                _id: ObjectID(req.params.id)
+            }, update)
+            .then(response => {
+                this.HandleResult(res, 200, response)
+            })
+            .catch(err => {
+                throw err
+            })
     }
     CheckStatus(req, res, next) {
         Model.Locate.check((err, result) => {
@@ -28,7 +66,7 @@ class Locate extends Root {
                 me = user
                 return Model.Locate.findOne({
                     status: Locate_Status.NEW,
-                    locator:null
+                    locator: null
                 })
             })
             .then(result => {
@@ -43,9 +81,9 @@ class Locate extends Root {
                     }, updated)
                 }
             })
-            .then(result=>{
-                if(!result) return this.HandleResult(res,204, "")
-                this.HandleResult(res,200,result)
+            .then(result => {
+                if (!result) return this.HandleResult(res, 204, "")
+                this.HandleResult(res, 200, result)
             })
             .catch(err => {
                 throw err

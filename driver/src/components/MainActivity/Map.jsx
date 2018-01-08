@@ -10,8 +10,8 @@ import {
   InfoWindow, Circle, DirectionsRenderer
 } from "react-google-maps"
 import { compose, withProps } from 'recompose'
-
-
+import { UpdateLocation } from './api.js'
+import { Socket } from '../Config/config.js'
 const generateMaker = (drivers, onDragEnd) =>
   drivers.map(({ location, _id }, index) => {
     return <Marker
@@ -30,66 +30,61 @@ class Map extends React.Component {
   constructor() {
     super()
     this.state = {
-      address: "227 nguyen van cu",
-      center: {},
-      map: null
+      map: null,
+      direction: null,
+      directionsService: new google.maps.DirectionsService
     }
-    this.geocodeAddress = this.geocodeAddress.bind(this)
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
   }
+  updateDriverPosition(marker, id) {
+    const { updateDriver, socket } = this.props
+    const location = JSON.stringify(marker.latLng)
+    UpdateLocation(location, id)
+      .then(response => {
+        socket.emit(Socket.Driver.DRIVER_MOVE, response.data.message)
+        updateDriver(response)
+        // this.props.fetchDriver()
+      })
+      .catch(err => {
+        throw err
+      })
+  }
+  getDirection(driver, point, service) {
+    return new Promise((resolve, reject) => {
+      let request = {
+        origin: new google.maps.LatLng(point),
+        destination: new google.maps.LatLng(driver),
+        travelMode: 'DRIVING'
+      }
+      service.route(request, function (result, status) {
+        if (status == 'OK') {
+          resolve(result)
+        }else{
+          reject("Loi roi anh oiiiiiiiiiii")
+        }
+      })
+    })
+  }
   componentWillReceiveProps(nextProps) {
-    const address = nextProps.location && nextProps.location.address
-    const drivers = nextProps.drivers && nextProps.drivers
-    if (address != this.state.address) {
-      this.geocodeAddress(address)
+    const driver = nextProps.driver && nextProps.driver.location
+    const point = nextProps.point && nextProps.point.location
+    console.log(driver, point)
+    const { directionsService } = this.state
+    if (driver && point) {
+      this.getDirection(driver,point,directionsService)
+      .then(direction=>{
+        this.setState({...this.state,direction})
+      })
+      .catch(err=>{
+        throw err
+      })
+    }else{
+      this.setState({
+        ...this.state,
+        direction: null,
+      })
     }
-  }
-  geocodeAddress(address) {
-    const geocoder = new google.maps.Geocoder()
-    geocoder.geocode({
-      'address': address
-    }, (results, status) => {
-      if (status === 'OK') {
-        console.log(results)
-        this.setState({
-          ...this.state,
-          center: results[0].geometry.location,
-          address: address
-        })
-      }
-    })
-  }
-  componentDidMount() {
-    const { address } = this.state
-    const { drivers } = this.props
-    const geocoder = new google.maps.Geocoder()
-    geocoder.geocode({
-      'address': address
-    }, (results, status) => {
-      if (status === 'OK') {
-        console.log(results)
-        this.setState({
-          ...this.state,
-          center: results[0].geometry.location
-        })
-      }
-    })
-    // DirectionsService.route({
-    //   origin: new google.maps.LatLng(10.7626272, 106.6805864),
-    //   destination: new google.maps.LatLng(10.7626372, 106.6850864),
-    //   travelMode: google.maps.TravelMode.DRIVING,
-    // }, (result, status) => {
-    //   if (status === google.maps.DirectionsStatus.OK) {
-    //     this.setState({
-    //       directions: result,
-    //     });
-    //   } else {
-    //     console.error(`error fetching directions ${result}`);
-    //   }
-    // });
-  }
-  updateDriverPosition(marker,id){
-    console.log("update",marker,id)
+
   }
   onMapLoad(map) {
     if (this.state.map === null) {
@@ -99,59 +94,42 @@ class Map extends React.Component {
       })
     }
   }
-  onBoundsChanged() {
-    const { map, center } = this.state
-  }
   render() {
-    const { center, address } = this.state
-    const { drivers } = this.props
+    const { driver } = this.props
+    const { direction } = this.state
+    const location = driver.location && driver.location
     return (
       <div>
         {
-          Object.keys(center).length > 0 ?
+          Object.keys(driver).length > 0 ?
             <GoogleMap
               defaultZoom={15}
-              center={center}
-              onBoundsChanged={this.onBoundsChanged.bind(this)}
+              center={location}
               ref={this.onMapLoad.bind(this)}
             >
-              <Circle
-                center={center}
-                radius={1000}
-              />
-              {
-                drivers.length > 0 ?
-                  drivers.map(({ location, _id }) => {
-                    return <Marker
-                      key={_id}
-                      position={location}
-                      defaultVisible={true}
-                      name="name"
-                      icon={{
-                        url: '/bike.png',
-                        scaledSize: new google.maps.Size(50, 50)
-                      }}
-                      draggable={true}
-                      onDragEnd={(marker) => {
-                        this.updateDriverPosition(marker,_id)
-                      }}
-                    />
-                  })
-                  : ""
-              }
-              {/* <DirectionsRenderer directions={props.directions} /> */}
               <Marker
-                position={center}
+                position={location}
                 defaultVisible={true}
-              // icon={{
-              //   url: 'image/user.png',
-              //   scaledSize: new google.maps.Size(30, 30)
-              // }}
-              >
-                <InfoWindow><div>{address}</div></InfoWindow>
-              </Marker>
+                name="name"
+                icon={{
+                  url: '/bike.png',
+                  scaledSize: new google.maps.Size(50, 50)
+                }}
+                draggable={true}
+                onDragEnd={(marker) => {
+                  this.updateDriverPosition(marker, driver._id)
+                }}
+              />
             </GoogleMap >
             : <h2>Loading</h2>
+        }
+        {
+          direction ? <DirectionsRenderer
+            directions={direction}
+            options={{
+              suppressMarkers: true
+            }}
+          /> : ""
         }
       </div>
     )

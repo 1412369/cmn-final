@@ -88,14 +88,14 @@ class Driver extends Root {
         let results ={}
         const {
             driver,
-            locater
+            locator
         } = req.body.payload
         const _id = req.params.id
         const update = {
             $set: {
                 driver: driver,
-                locater: locater,
-                status: "paired"
+                locator: locator,
+                status: "moving"
             }
         }
         Model.Locate.modified({

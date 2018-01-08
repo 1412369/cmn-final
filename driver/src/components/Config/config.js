@@ -1,11 +1,15 @@
 import axios from 'axios'
 const Locate = {
-    DONE_ADDRESS: "locate_done"
+    PAIR: "pair_driver_with_locate"
 }
 const Phone = {
     NEW_ADDRESS: "phone_new",
 }
 const Driver = {
+    DRIVER_MOVE:"driver_move",
+    DRIVER_ACCEPT:"drover_accept",
+    DRIVER_DENIED:"driver_denied",
+    DRIVER_FINISH:"driver_finish",
 
 }
 const Point = {
