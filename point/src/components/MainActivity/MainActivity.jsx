@@ -33,6 +33,7 @@ class MainActivity extends React.PureComponent {
     componentDidMount() {
         const socket = io.connect('http://localhost:8000')
         socket.on("UPDATE", payload => {
+            console.log("update")
             fetchData()
                 .then(response => {
                     this.setState({
@@ -95,7 +96,7 @@ class MainActivity extends React.PureComponent {
                 </Cell>
                 <Cell size={12}>
                     <DataTable
-                        data={filterData}
+                        data={filterData.reverse()}
                     />
                 </Cell>
             </Grid >

@@ -38,6 +38,7 @@ io.on('connection', (socket) => {
         })
     })
     socket.on(Client.POINT, (client_id) => {
+        console.log("Point connect")
         Pointers = socket.id
     })
     socket.on(Client.LOCATE, (client_id) => {
@@ -82,11 +83,6 @@ io.on('connection', (socket) => {
         const driver_value = Drivers.get(payload.driver.email)
         io.to(driver_value.id).emit(Locate.PAIR, payload)
     })
-    socket.on("LOCATING", payload => {
-        if (Pointers) {
-            io.to(Pointers).emit("UPDATE","OK")
-        }
-    })
     socket.on(Driver.DRIVER_ACCEPT, (payload) => {
         const driver_value = Drivers.get(payload.driver.email)
         const locater_value = Locaters.get(payload.locater.email)
@@ -111,6 +107,7 @@ io.on('connection', (socket) => {
 
     })
     socket.on("UPDATE", payload => {
+        console.log("update")
         if (Pointers) {
             io.to(Pointers).emit("UPDATE","OK")
         }
