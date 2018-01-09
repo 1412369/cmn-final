@@ -32,17 +32,30 @@ class Map extends React.Component {
     this.state = {
       map: null,
       direction: null,
-      directionsService: new google.maps.DirectionsService
+      infor: null,
+      directionsService: new google.maps.DirectionsService,
+      geocoder: new google.maps.Geocoder
     }
+    this.updateInfor = this.updateInfor.bind(this)
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
   }
   updateDriverPosition(marker, id) {
     const { updateDriver, socket } = this.props
+    const { geocoder } = this.state
     const location = JSON.stringify(marker.latLng)
     UpdateLocation(location, id)
       .then(response => {
         socket.emit(Socket.Driver.DRIVER_MOVE, response.data.message)
         updateDriver(response)
+        this.updateInfor(this.state.geocoder,marker.latLng)
+          .then(response => {
+            this.setState({
+              ...this.state,
+              infor: response
+            })
+          }).catch(err => {
+            throw err
+          })
         // this.props.fetchDriver()
       })
       .catch(err => {
@@ -59,7 +72,7 @@ class Map extends React.Component {
       service.route(request, function (result, status) {
         if (status == 'OK') {
           resolve(result)
-        }else{
+        } else {
           reject("Loi roi anh oiiiiiiiiiii")
         }
       })
@@ -71,20 +84,48 @@ class Map extends React.Component {
     console.log(driver, point)
     const { directionsService } = this.state
     if (driver && point) {
-      this.getDirection(driver,point,directionsService)
-      .then(direction=>{
-        this.setState({...this.state,direction})
-      })
-      .catch(err=>{
-        throw err
-      })
-    }else{
+      this.getDirection(driver, point, directionsService)
+        .then(direction => {
+          this.setState({ ...this.state, direction })
+        })
+        .catch(err => {
+          throw err
+        })
+    } else {
       this.setState({
         ...this.state,
         direction: null,
       })
     }
-
+  }
+  updateInfor(geocoder,location) {
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ 'location': location}, function (results, status) {
+        if (status === 'OK') {
+          if (results[0]) {
+            console.log("result0", results[0])
+            resolve(results[0].formatted_address)
+          } else {
+            window.alert('No results found');
+          }
+        } else {
+          window.alert('Geocoder failed due to: ' + status);
+        }
+      })
+    })
+  }
+  componentDidMount() {
+    const { geocoder } = this.state
+    this.updateInfor(geocoder,this.props.driver.location)
+      .then(response => {
+        this.setState({
+          ...this.state,
+          infor: response
+        })
+      })
+      .catch(err => {
+        throw err
+      })
   }
   onMapLoad(map) {
     if (this.state.map === null) {
@@ -96,7 +137,7 @@ class Map extends React.Component {
   }
   render() {
     const { driver } = this.props
-    const { direction } = this.state
+    const { direction, infor } = this.state
     const location = driver.location && driver.location
     return (
       <div>
@@ -119,7 +160,9 @@ class Map extends React.Component {
                 onDragEnd={(marker) => {
                   this.updateDriverPosition(marker, driver._id)
                 }}
-              />
+              >
+                <InfoWindow><div>{infor}</div></InfoWindow>
+              </Marker>
             </GoogleMap >
             : <h2>Loading</h2>
         }

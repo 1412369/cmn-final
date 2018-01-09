@@ -81,12 +81,13 @@ class Routing extends PureComponent {
   render() {
     const { location } = this.props;
     const { visible, isLogged } = this.state;
+    const _user = JSON.parse(localStorage.getItem("user"))
     return (
       <div>
         {
           !isLogged ? <Toolbar colored fixed title="Đăng nhập" /> :
 
-            <Toolbar colored fixed title={`Hello ${localStorage.getItem("current_user")}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+            <Toolbar colored fixed title={`Hello ${_user.name}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
         }
 
         <CSSTransitionGroup

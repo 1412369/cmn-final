@@ -17,13 +17,18 @@ class LeftActivity extends React.Component {
     onPick() {
         const { point,socket } = this.props
         UpdateStatus(point._id, {status:"moving"})
-        socket.emit("UPDATE")        
+        .then(response=>{
+            socket.emit("UPDATE","OK")        
+        })
+        .catch(err=>{
+            throw err
+        })
     }
     onDrop() {
         const { locater,driver,updatePoint ,socket,point} = this.props
         UpdateStatus(point._id, { status: "finish", driver_id: driver._id})
         .then(response=>{
-            socket.emit("UPDATE")
+            socket.emit("UPDATE","OK")
         })
         .catch(err=>{
             throw err

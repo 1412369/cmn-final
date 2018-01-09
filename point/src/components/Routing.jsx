@@ -4,7 +4,8 @@ import CSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
 import { withRouter } from 'react-router-dom';
 import { Link, Route, Switch } from 'react-router-dom';
 import { Button, Drawer, Toolbar } from 'react-md';
-import { Home, About, CallHistory, Login, Profile,Register } from './'
+import { Home, About, CallHistory, Login, Profile, Register } from './'
+import axios from 'axios'
 import NavItemLink from './NavItemLink'
 const navItems = [{
   label: 'Home',
@@ -45,7 +46,9 @@ class Routing extends PureComponent {
   componentDidMount() {
     // Need to set the renderNode since the drawer uses an overlay
     const isLogged = localStorage.getItem('isLogged')
-    if (isLogged === 'true') this.setState(...this.state, { isLogged })
+    if (isLogged === 'true') {
+      this.setState({ ...this.state, isLogged: true })
+    }
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
   changeStatus(status) { this.setState(...this.state, { isLogged: status }) }
@@ -62,14 +65,15 @@ class Routing extends PureComponent {
   };
 
   render() {
-    const { location } = this.props;
+    const { location } = this.props
+    const _user = JSON.parse(localStorage.getItem("user"))
     const { visible, isLogged } = this.state;
     return (
       <div>
         {
-          !isLogged? <Toolbar colored fixed title="Đăng nhập" />:
-          
-          <Toolbar colored fixed title={`Hello ${localStorage.getItem("current_user")}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
+          !isLogged ? <Toolbar colored fixed title="Đăng nhập" /> :
+
+            <Toolbar colored fixed title={`Hello ${_user.name}`} nav={<Button icon onClick={this.showDrawer}>menu</Button>} />
         }
 
         <CSSTransitionGroup

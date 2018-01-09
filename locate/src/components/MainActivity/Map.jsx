@@ -38,9 +38,11 @@ class Map extends React.Component {
       geocoder: new google.maps.Geocoder(),
       closer_driver: null,
       direction: null,
+      infor:null,
       directionsService: new google.maps.DirectionsService
     }
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
+    this.onUserMove=this.onUserMove.bind(this)
     this.filterDriversWithRadius = this.filterDriversWithRadius.bind(this)
   }
   componentWillReceiveProps(nextProps) {
@@ -50,6 +52,7 @@ class Map extends React.Component {
     const drivers = nextProps.drivers && nextProps.drivers
     const radius = nextProps.radius && nextProps.radius
     let filter_drivers = []
+    console.log("receiver,address",address)
     if (address) {
       geocoder.geocode({
         'address': address
@@ -60,6 +63,10 @@ class Map extends React.Component {
           .then(response=>{
             socket.emit("UPDATE")
             updateGeoCode(response.data.message)
+            this.setState({
+              ...this.state,
+              infor:address
+            })
           })
           if (drivers.length > 0) {
             this.filterDriversWithRadius(drivers, radius)
@@ -73,7 +80,8 @@ class Map extends React.Component {
                       .then(result => {
                         return {
                           ...result,
-                          driver
+                          driver,
+                          infor:address
                         }
                       })
                       .catch(err => {
@@ -85,7 +93,8 @@ class Map extends React.Component {
                   this.setState({
                     ...this.state,
                     filter_drivers: [],
-                    filter_drivers_with_dist: []
+                    filter_drivers_with_dist: [],
+                    infor:address
                   })
                   return {
                     then: function () { }
@@ -107,7 +116,7 @@ class Map extends React.Component {
                 console.error(err)
               })
           } else {
-              this.setState({...this.state,center})
+              this.setState({...this.state,center,infor:address})
           }
 
         } else {
@@ -250,11 +259,40 @@ class Map extends React.Component {
   onBoundsChanged() {
     const { map, center } = this.state
   }
+  updateInfor(geocoder,location) {
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ 'location': location}, function (results, status) {
+        if (status === 'OK') {
+          if (results[0]) {
+            console.log("result0", results[0])
+            resolve(results[0].formatted_address)
+          } else {
+            console.log("no locaiton found") 
+          }
+        } else {
+          console.log("no locaiton found") 
+        }
+      })
+    })
+  }
+  onUserMove(marker){
+    const {geocoder}=this.state
+    this.updateInfor(geocoder,marker.latLng)
+    .then(response=>{
+      this.setState({
+        ...this.state,
+        infor:response
+      })
+    })
+    .catch(err=>{
+      throw err
+    })
+    console.log("user move",this.props)
+  }
   render() {
     console.log("this.oldstate",this.state)
     const {
-      center,
-      address,
+      center,infor,
       filter_drivers,
       filter_drivers_with_dist } = this.state
     const { radius, closer_driver,showMarker } = this.props
@@ -307,17 +345,20 @@ class Map extends React.Component {
               }
 
               {
-                showMarker ?
-                  <Marker
-                    position={center}
-                    defaultVisible={true}
-                  // icon={{
-                  //   url: 'image/user.png',
-                  //   scaledSize: new google.maps.Size(30, 30)
-                  // }}
-                  >
-                    <InfoWindow><div>{address}</div></InfoWindow>
-                  </Marker> : null
+                showMarker &&
+                <Marker
+                position={center}
+                defaultVisible={true}
+                name="name"
+                icon={{
+                  url: '/image/user.png',
+                  scaledSize: new google.maps.Size(50, 50)
+                }}
+                draggable={true}
+                onDragEnd={this.onUserMove}
+              >
+                <InfoWindow><div>{infor}</div></InfoWindow>
+              </Marker>
               }
             </GoogleMap >
             : <h2>Loading</h2>

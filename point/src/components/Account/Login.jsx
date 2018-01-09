@@ -47,7 +47,7 @@ class Login extends React.Component {
                 const { data } = response
                 if (data.status === 200) {
                     localStorage.setItem("token", data.message.token)
-                    localStorage.setItem("current_user",data.message.user)
+                    localStorage.setItem("user",JSON.stringify(data.message.user))
                     localStorage.setItem("isLogged", "true")
                     this.props.changeStatus(true)
                 }
