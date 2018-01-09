@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import { Grid, Cell, Paper, TextField, Button, SelectField } from 'react-md'
-import {PostAddress} from './api.js'
-import {Socket} from '../Config/config.js'
+import { PostAddress } from './api.js'
+import { Socket } from '../Config/config.js'
+import Table from './Table'
+import axios from 'axios'
 class MainActivity extends Component {
     constructor() {
         super()
@@ -11,39 +13,84 @@ class MainActivity extends Component {
             phone: "",
             name: "",
             note: "",
+            locations: [],
+            _filters: []
         }
         this.onTextChange = this.onTextChange.bind(this)
         this.onSubmit = this.onSubmit.bind(this)
         this.onTypeChange = this.onTypeChange.bind(this)
     }
-    onTypeChange(value, index, event){
-        this.setState({...this.state,type:value})
+    onTypeChange(value, index, e) {
+        const { _filters } = this.state
+        const { address, type, phone, note, name } = this.state
+        const new_locations = _filters.filter(item => item.type === value && item)
+        this.setState({
+            ...this.state,
+            _filters: [...new_locations],
+            type: value
+        })
     }
-    onTextChange(value, e) { this.setState({ ...this.state, [e.target.name]: value }) }
-    onSubmit(){
-        PostAddress(localStorage.getItem('token'),{...this.state})
-        .then(response=>{
-            const {socket} = this.props
-            socket.emit(Socket.Phone.NEW_ADDRESS,response.data.message)
-            this.setState({
-                address: "",
-                type: "",
-                phone: "",
-                name: "",
-                note: "",
+    componentDidMount() {
+        axios.get('http://localhost:8080/locates')
+            .then(response => {
+                console.log("response", response.data.message)
+                this.setState({
+                    ...this.state,
+                    locations: response.data.message,
+                    _filters: response.data.message
+                })
             })
+
+    }
+    onTextChange(value, e) {
+        const { address, type, phone, note, name, locations } = this.state
+        let new_locations = locations
+        if (address) {
+            new_locations = new_locations.filter(item => item['address'].includes(address) && item)
+        }
+        if (type) {
+            new_locations = new_locations.filter(item => item['type'] === type && item)
+        }
+        if (phone) {
+            new_locations = new_locations.filter(item => item['phone'].includes(phone) && item)
+        }
+        if (name) {
+            new_locations = new_locations.filter(item => item['name'].includes(name) && item)
+        }
+        console.log(new_locations)
+        this.setState({
+            ...this.state,
+            [e.target.name]: value,
+            _filters: [...new_locations]
         })
-        .catch(err=>{
-            console.error(err)
-        })
-        
+    }
+    onSubmit() {
+        PostAddress(localStorage.getItem('token'), { ...this.state })
+            .then(response => {
+                const { socket } = this.props
+                socket.emit(Socket.Phone.NEW_ADDRESS, response.data.message)
+                this.setState({
+                    address: "",
+                    type: "",
+                    phone: "",
+                    name: "",
+                    note: "",
+                    locations: [
+                        ...this.state.locations,
+                        response.data.message
+                    ]
+                })
+            })
+            .catch(err => {
+                console.error(err)
+            })
+
     }
     render() {
-        const { phone, name, address, note,type } = this.state
+        const { phone, name, address, note, type } = this.state
         return (
             <Grid>
-                <Cell size={3}></Cell>
-                <Cell size={6}>
+                <Cell size={4}>
                     <Paper style={{ padding: "20px" }}>
                         <h4>Nhận khách</h4>
                         <hr />
@@ -65,8 +112,8 @@ class MainActivity extends Component {
                                     block={true}
                                     value={type}
                                     name="type"
-                                    onChange={this.onTypeChange}                                    
-                                    menuItems={["premium","normal"]}
+                                    onChange={this.onTypeChange}
+                                    menuItems={["premium", "normal"]}
                                     simplifiedMenu={true}
                                 />
                             </Cell>
@@ -109,8 +156,16 @@ class MainActivity extends Component {
                         </Grid>
                     </Paper>
                 </Cell>
-                <Cell size={3}></Cell>
+                <Cell size={8}>
+                    <Paper style={{ padding: "20px" }}>
+                        <h4>Lịch sử cuộc gọi:</h4>
+                        <hr />
+                        <Table
+                            data={this.state._filters.reverse()}
+                        />
+                    </Paper>
 
+                </Cell>
             </Grid>
         );
     }
