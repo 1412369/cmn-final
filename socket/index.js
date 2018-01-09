@@ -38,14 +38,25 @@ io.on('connection', (socket) => {
         })
     })
     socket.on(Client.POINT, (client_id) => {
+        console.log("Point connect")
         Pointers = socket.id
     })
     socket.on(Client.LOCATE, (client_id) => {
         console.log(`Connected: ${client_id},${socket.id}`)
-        Locaters.set(client_id, {
-            id: socket.id,
-            status: "free"
-        })
+        if (LocationsQueue.length > 0) {
+            let getAddress = LocationsQueue.pop()
+            console.log("new locate",getAddress,socket.id)
+            io.to(socket.id).emit(Phone.NEW_ADDRESS,getAddress)
+            Locaters.set(client_id, {
+                id: socket.id,
+                status: "busy"
+            })
+        } else {
+            Locaters.set(client_id, {
+                id: socket.id,
+                status: "free"
+            })
+        }
     })
     socket.on(Client.PHONE, (client_id) => {
         console.log(`Connected: ${client_id} `)
@@ -57,11 +68,13 @@ io.on('connection', (socket) => {
     //==============Data tranfer=========== 
     socket.on(Phone.NEW_ADDRESS, (address) => {
         if (Pointers) {
-            io.to(Pointers).emit("UPDATE","OK")
+            io.to(Pointers).emit("UPDATE", "OK")
         }
+        LocationsQueue.push(address)
         for (let [key, value] of Locaters) {
             if (value.status === "free") {
-                io.to(value.id).emit(Phone.NEW_ADDRESS, address)
+                const getAddress = LocationsQueue.pop()
+                io.to(value.id).emit(Phone.NEW_ADDRESS, getAddress)
                 Locaters.set(key, {
                     id: value.id,
                     status: "busy"
@@ -82,11 +95,6 @@ io.on('connection', (socket) => {
         const driver_value = Drivers.get(payload.driver.email)
         io.to(driver_value.id).emit(Locate.PAIR, payload)
     })
-    socket.on("LOCATING", payload => {
-        if (Pointers) {
-            io.to(Pointers).emit("UPDATE","OK")
-        }
-    })
     socket.on(Driver.DRIVER_ACCEPT, (payload) => {
         const driver_value = Drivers.get(payload.driver.email)
         const locater_value = Locaters.get(payload.locater.email)
@@ -96,12 +104,17 @@ io.on('connection', (socket) => {
                 id: driver_value.id,
                 status: "busy"
             })
-            Locaters.set(payload.locater.email, {
-                id: locater_value.id,
-                status: "free"
-            })
+            if (LocationsQueue.length > 0) {
+                const getAdress = LocationsQueue.pop()
+                io.to(locater_value.id).emit(Phone.NEW_ADDRESS,getAdress)
+            } else {
+                Locaters.set(payload.locater.email, {
+                    id: locater_value.id,
+                    status: "free"
+                })
+            }
             if (Pointers) {
-                io.to(Pointers).emit("UPDATE","OK")
+                io.to(Pointers).emit("UPDATE", "OK")
             }
         }).catch(err => {
             console.log(err)
@@ -111,8 +124,9 @@ io.on('connection', (socket) => {
 
     })
     socket.on("UPDATE", payload => {
+        console.log("update")
         if (Pointers) {
-            io.to(Pointers).emit("UPDATE","OK")
+            io.to(Pointers).emit("UPDATE", "OK")
         }
     })
     socket.on(Driver.DRIVER_FINISH, (payload) => {
@@ -128,7 +142,7 @@ io.on('connection', (socket) => {
                 }
                 console.log("pointer", Pointers)
                 if (Pointers) {
-                    io.to(Pointers).emit("UPDATE","OK")
+                    io.to(Pointers).emit("UPDATE", "OK")
                 }
             })
             .catch(err => {
