@@ -300,7 +300,7 @@ class Map extends React.Component {
       center, infor,
       filter_drivers,
       filter_drivers_with_dist } = this.state
-    const { radius, closer_driver, showMarker } = this.props
+    const { radius, closer_driver, showMarker,location } = this.props
     const direct = closer_driver && closer_driver.result
     return (
       <div>
@@ -321,7 +321,7 @@ class Map extends React.Component {
               }
               {
                 filter_drivers.length > 0 ?
-                  filter_drivers.map(({ location, _id }) => {
+                  filter_drivers.map(({ email, location, _id }) => {
                     return <Marker
                       // key={_id}
                       position={location}
@@ -336,7 +336,10 @@ class Map extends React.Component {
                       onDragEnd={(marker) => {
                         this.updateDriverPosition(marker, _id)
                       }}
-                    />
+                    >
+                      <InfoWindow><div>{email}
+                      </div></InfoWindow>
+                    </Marker>
                   })
                   : ""
               }
@@ -362,7 +365,13 @@ class Map extends React.Component {
                   draggable={true}
                   onDragEnd={this.onUserMove}
                 >
-                  <InfoWindow><div>{infor}</div></InfoWindow>
+                  <InfoWindow><div>
+                    <span style={{ color: "green" }}>Đ/c: </span>{infor}
+                    <br />
+                    <span style={{ color: "green" }}>Tên: </span>{location.name}
+                    <br />
+                    <span style={{ color: "green" }}>SĐT: </span>{location.phone}
+                  </div></InfoWindow>
                 </Marker>
               }
             </GoogleMap >

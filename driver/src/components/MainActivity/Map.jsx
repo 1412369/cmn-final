@@ -47,7 +47,7 @@ class Map extends React.Component {
       .then(response => {
         socket.emit(Socket.Driver.DRIVER_MOVE, response.data.message)
         updateDriver(response)
-        this.updateInfor(this.state.geocoder,marker.latLng)
+        this.updateInfor(this.state.geocoder, marker.latLng)
           .then(response => {
             this.setState({
               ...this.state,
@@ -98,9 +98,9 @@ class Map extends React.Component {
       })
     }
   }
-  updateInfor(geocoder,location) {
+  updateInfor(geocoder, location) {
     return new Promise((resolve, reject) => {
-      geocoder.geocode({ 'location': location}, function (results, status) {
+      geocoder.geocode({ 'location': location }, function (results, status) {
         if (status === 'OK') {
           if (results[0]) {
             console.log("result0", results[0])
@@ -116,7 +116,7 @@ class Map extends React.Component {
   }
   componentDidMount() {
     const { geocoder } = this.state
-    this.updateInfor(geocoder,this.props.driver.location)
+    this.updateInfor(geocoder, this.props.driver.location)
       .then(response => {
         this.setState({
           ...this.state,
@@ -136,7 +136,9 @@ class Map extends React.Component {
     }
   }
   render() {
-    const { driver } = this.props
+    const { driver, point } = this.props
+    console.log("this.props", this.props)
+    const user = point && point.location && point.location
     const { direction, infor } = this.state
     const location = driver.location && driver.location
     return (
@@ -154,7 +156,8 @@ class Map extends React.Component {
                 name="name"
                 icon={{
                   url: '/bike.png',
-                  scaledSize: new google.maps.Size(50, 50)
+                  scaledSize: new google.maps.Size(50, 50),
+                  anchor: new google.maps.Point(30, 30)
                 }}
                 draggable={true}
                 onDragEnd={(marker) => {
@@ -167,12 +170,32 @@ class Map extends React.Component {
             : <h2>Loading</h2>
         }
         {
-          direction ? <DirectionsRenderer
+          direction && <DirectionsRenderer
             directions={direction}
             options={{
               suppressMarkers: true
             }}
-          /> : ""
+          />
+        }
+        {
+          user && <Marker
+            position={user}
+            defaultVisible={true}
+            name="name"
+            icon={{
+              url: '/image/user.png',
+              scaledSize: new google.maps.Size(50, 50),
+              anchor: new google.maps.Point(30, 30)
+            }}
+          >
+            <InfoWindow><div>
+              <span style={{ color: "green" }}>Đ/c: </span>{point.address}
+              <br/>
+              <span style={{ color: "green" }}>Tên: </span>{point.name}
+              <br/>
+              <span style={{ color: "green" }}>SĐT: </span>{point.phone}
+            </div></InfoWindow>
+          </Marker>
         }
       </div>
     )
