@@ -8,7 +8,7 @@ import LeftActivity from './LeftActivity'
 import { Socket } from '../Config/config.js'
 import { GetDrivers, Pair } from './api.js'
 import Clock from 'react-countdown-clock'
-import {toast,ToastContainer} from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 const removeDriver = (drivers, id) => {
     return drivers.filter(driver => driver._id != id && driver)
 }
@@ -19,14 +19,14 @@ class MainActivity extends React.PureComponent {
             location: {},
             drivers: [],
             radius: 0,
-            notifyId:null,
+            notifyId: null,
             closer_driver: null,
-            showMarker:false,
+            showMarker: false,
         }
         this.fetchDriver = this.fetchDriver.bind(this)
         this.updateDrivers = this.updateDrivers.bind(this)
     }
-    changeShowMarker(){this.setState({...this.state,showMarker:!this.state.showMarker})}
+    changeShowMarker() { this.setState({ ...this.state, showMarker: !this.state.showMarker }) }
     onExpandToggle(expanded) {
         console.log(expanded)
     }
@@ -34,7 +34,7 @@ class MainActivity extends React.PureComponent {
         this.setState({
             ...this.state,
             location,
-            showMarker:true
+            showMarker: true
         })
     }
     updateCloserDriver(closer_driver) {
@@ -74,7 +74,9 @@ class MainActivity extends React.PureComponent {
         this.fetchDriver()
         if (socket) {
             socket.on(Socket.Phone.NEW_ADDRESS, (address) => {
-                this.setState({ ...this.state, location: address })
+                setTimeout(() => {
+                    this.setState({ ...this.state, location: address })
+                }, 500)
             })
             socket.on(Socket.Driver.ONLINE, (driver) => {
                 if (driver.status === "free") {
@@ -88,7 +90,7 @@ class MainActivity extends React.PureComponent {
             socket.on(Socket.Driver.DRIVER_ACCEPT, (payload) => {
                 GetDrivers().then(response => {
                     const drivers = response.data.message
-                    const {notifyId} = this.state
+                    const { notifyId } = this.state
                     toast.dismiss(notifyId)
                     this.setState({
                         ...this.state,
@@ -96,7 +98,7 @@ class MainActivity extends React.PureComponent {
                         location: {},
                         closer_driver: null,
                         radius: 0,
-                        showMarker:false,
+                        showMarker: false,
                         status: "paired"
                     })
                 }).catch(err => {
@@ -107,13 +109,13 @@ class MainActivity extends React.PureComponent {
             socket.on(Socket.Driver.DRIVER_FINISH, (payload) => {
                 GetDrivers().then(response => {
                     const drivers = response.data.message
-                    const {location} = this.state
+                    const { location } = this.state
                     this.setState({
                         ...this.state,
                         drivers,
-                        location: location.status==="locating"?location:{},
+                        location: location.status === "locating" ? location : {},
                         closer_driver: null,
-                        showMarker:false,
+                        showMarker: false,
                         radius: 0,
                         status: "none"
                     })
@@ -125,7 +127,7 @@ class MainActivity extends React.PureComponent {
             socket.on(Socket.Driver.DRIVER_DENIED, (payload) => {
                 GetDrivers().then(response => {
                     const drivers = response.data.message
-                    const {notifyId} = this.state
+                    const { notifyId } = this.state
                     toast.dismiss(notifyId)
                     this.setState({
                         ...this.state,
@@ -155,11 +157,11 @@ class MainActivity extends React.PureComponent {
             throw new Error("Loi cai con cac")
         }
     }
-    notify(){
-        const id=toast.success("Phản hồi từ tài xế!",{ autoClose: 5000 })
+    notify() {
+        const id = toast.success("Phản hồi từ tài xế!", { autoClose: 5000 })
         this.setState({
             ...this.state,
-            notifyId:id
+            notifyId: id
         })
     }
     onHide() {
@@ -173,8 +175,8 @@ class MainActivity extends React.PureComponent {
         console.log("status", status)
         return (
             <Grid style={{ padding: "0px", margin: "0px" }} className="force-overflow">
-                <ToastContainer 
-                autoClose={5000}/>
+                <ToastContainer
+                    autoClose={5000} />
                 <Cell size={4} phoneSize={12} style={{ padding: "10px", margin: "0px" }} className="scrollbar" id="style-1">
                     <LeftActivity
                         {...this.state}
