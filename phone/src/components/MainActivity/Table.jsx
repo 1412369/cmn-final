@@ -8,7 +8,7 @@ import {
     TablePagination,
     Button, DialogContainer, Toolbar
 } from 'react-md';
-const headers = ["Address", "Date", "Username", "Phone", "Type", "Status"];
+const headers = ["Address", "Date", "Username", "Phone", "Type", "Status", "Actions"];
 class DataTables extends React.PureComponent {
     constructor(props) {
         super(props)
@@ -52,14 +52,22 @@ class DataTables extends React.PureComponent {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {slicedData.map(({ _id, type, address, phone, name, created_at, status }) => (
-                            <TableRow key={_id} selectable={false}>
-                                <TableColumn>{address}</TableColumn>
-                                <TableColumn>{new Date(created_at).toLocaleDateString()}</TableColumn>
-                                <TableColumn>{name}</TableColumn>
-                                <TableColumn>{phone}</TableColumn>
-                                <TableColumn>{type}</TableColumn>
-                                <TableColumn>{status}</TableColumn>
+                        {slicedData.map((item) => (
+                            <TableRow key={item._id} selectable={false}>
+                                <TableColumn>{item.address}</TableColumn>
+                                <TableColumn>{new Date(item.created_at).toLocaleDateString()}</TableColumn>
+                                <TableColumn>{item.name}</TableColumn>
+                                <TableColumn>{item.phone}</TableColumn>
+                                <TableColumn>{item.type}</TableColumn>
+                                <TableColumn>{item.status}</TableColumn>
+                                <TableColumn>{item.status === "finish" ?
+                                    <Button
+                                        flat
+                                        secondary
+                                        swapTheming
+                                        onClick={()=>this.props.pair(item)}
+                                    >Send</Button> : "None"
+                                }</TableColumn>
                             </TableRow>
                         ))}
                     </TableBody>

@@ -1,6 +1,7 @@
 import axios from 'axios'
 const Locate = {
-    PAIR: "pair_driver_with_locate"
+    PAIR: "pair_driver_with_locate",
+    DIRECT_PAIR:"direct_pair"
 }
 const Phone = {
     NEW_ADDRESS: "phone_new",

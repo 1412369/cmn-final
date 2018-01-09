@@ -15,6 +15,7 @@ module.exports = {
     },
     Locate:{
         PAIR: "pair_driver_with_locate",
+        DIRECT_PAIR:"direct_pair"
     },
     Phone:{
         NEW_ADDRESS: "phone_new",

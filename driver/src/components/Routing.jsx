@@ -94,6 +94,15 @@ class Routing extends PureComponent {
         ask: true
       })
     })
+    socket.on(Socket.Locate.DIRECT_PAIR, (data) => {
+      console.log("driver_payload",data)
+      this.setState({
+        ...this.state,
+        point: data,
+        locater: data.locater,
+        ask: true
+      })
+    })
     socket.on(Socket.Driver.DRIVER_MOVE, (driver) => {
       this.setState({ ...this.state, driver })
     })

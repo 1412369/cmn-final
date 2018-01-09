@@ -21,13 +21,27 @@ class MainActivity extends Component {
         this.onTypeChange = this.onTypeChange.bind(this)
     }
     onTypeChange(value, index, e) {
-        const { _filters } = this.state
-        const { address, type, phone, note, name } = this.state
-        const new_locations = _filters.filter(item => item.type === value && item)
+        const { address, type, phone, note, name, locations } = this.state
+        let new_locations = locations
+        if (address) {
+            new_locations = new_locations.filter(item => item['address'].includes(address) && item)
+        }
+        if (phone) {
+            new_locations = new_locations.filter(item => item['phone'].includes(phone) && item)
+        }
+        if (name) {
+            new_locations = new_locations.filter(item => item['name'].includes(name) && item)
+        }
+        if (note) {
+            new_locations = new_locations.filter(item => item['note'].includes(note) && item)
+        }
+        new_locations = new_locations.filter(item => item['type'] === value && item)
         this.setState({
             ...this.state,
+            [e.target.name]: value,
             _filters: [...new_locations],
             type: value
+
         })
     }
     componentDidMount() {
@@ -45,19 +59,22 @@ class MainActivity extends Component {
     onTextChange(value, e) {
         const { address, type, phone, note, name, locations } = this.state
         let new_locations = locations
-        if (address) {
+        if (address && e.target.name != "address") {
             new_locations = new_locations.filter(item => item['address'].includes(address) && item)
         }
-        if (type) {
+        if (type && e.target.name != "type") {
             new_locations = new_locations.filter(item => item['type'] === type && item)
         }
-        if (phone) {
+        if (phone && e.target.name != "phone") {
             new_locations = new_locations.filter(item => item['phone'].includes(phone) && item)
         }
-        if (name) {
+        if (name && e.target.name != "name") {
             new_locations = new_locations.filter(item => item['name'].includes(name) && item)
         }
-        console.log(new_locations)
+        if (note && e.target.name != "note") {
+            new_locations = new_locations.filter(item => item['note'].includes(note) && item)
+        }
+        new_locations = new_locations.filter(item => item[e.target.name].includes(value) && item)
         this.setState({
             ...this.state,
             [e.target.name]: value,
@@ -65,7 +82,8 @@ class MainActivity extends Component {
         })
     }
     onSubmit() {
-        PostAddress(localStorage.getItem('token'), { ...this.state })
+        const { address, type, phone, note, name, locations } = this.state
+        PostAddress(localStorage.getItem('token'), { address, type, phone, note, name })
             .then(response => {
                 const { socket } = this.props
                 socket.emit(Socket.Phone.NEW_ADDRESS, response.data.message)
@@ -84,7 +102,11 @@ class MainActivity extends Component {
             .catch(err => {
                 console.error(err)
             })
-
+    }
+    directSend(location) {
+        const { socket } = this.props
+        console.log("emit", location)
+        socket.emit(Socket.Locate.DIRECT_PAIR, location)
     }
     render() {
         const { phone, name, address, note, type } = this.state
@@ -162,6 +184,7 @@ class MainActivity extends Component {
                         <hr />
                         <Table
                             data={this.state._filters.reverse()}
+                            pair={this.directSend.bind(this)}
                         />
                     </Paper>
 

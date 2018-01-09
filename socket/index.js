@@ -121,7 +121,6 @@ io.on('connection', (socket) => {
         })
     })
     socket.on(Driver.DRIVER_DENIED, (payload) => {
-        console.log("payload",payload)
         for (let [key, value] of Locaters) {
             io.to(value.id).emit(Driver.DRIVER_DENIED, payload)
         }
@@ -131,6 +130,11 @@ io.on('connection', (socket) => {
         if (Pointers) {
             io.to(Pointers).emit("UPDATE", "OK")
         }
+    })
+    socket.on(Locate.DIRECT_PAIR,payload=>{
+        console.log("direct",payload)
+        const driver_value = Drivers.get(payload.driver.email)
+        io.to(driver_value.id).emit(Locate.DIRECT_PAIR,payload)
     })
     socket.on(Driver.DRIVER_FINISH, (payload) => {
         const driver_value = Drivers.get(payload.driver.email)
