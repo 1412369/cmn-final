@@ -121,7 +121,10 @@ io.on('connection', (socket) => {
         })
     })
     socket.on(Driver.DRIVER_DENIED, (payload) => {
-
+        console.log("payload",payload)
+        for (let [key, value] of Locaters) {
+            io.to(value.id).emit(Driver.DRIVER_DENIED, payload)
+        }
     })
     socket.on("UPDATE", payload => {
         console.log("update")

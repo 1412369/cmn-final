@@ -11,8 +11,8 @@ import {
   InfoWindow, Circle, DirectionsRenderer
 } from "react-google-maps"
 import { compose, withProps } from 'recompose'
-import { UpdateLocation,UpdateGeocode } from './api.js'
-import {Socket} from '../Config/config.js'
+import { UpdateLocation, UpdateGeocode } from './api.js'
+import { Socket } from '../Config/config.js'
 const generateMaker = (drivers, onDragEnd) =>
   drivers.map(({ location, _id }, i) => {
     return <Marker
@@ -38,36 +38,36 @@ class Map extends React.Component {
       geocoder: new google.maps.Geocoder(),
       closer_driver: null,
       direction: null,
-      infor:null,
+      infor: null,
       directionsService: new google.maps.DirectionsService
     }
     this.updateDriverPosition = this.updateDriverPosition.bind(this)
-    this.onUserMove=this.onUserMove.bind(this)
+    this.onUserMove = this.onUserMove.bind(this)
     this.filterDriversWithRadius = this.filterDriversWithRadius.bind(this)
   }
   componentWillReceiveProps(nextProps) {
     const { geocoder, directionsService } = this.state
-    const { updateCloserDriver,updateGeoCode,socket } = this.props
+    const { updateCloserDriver, updateGeoCode, socket } = this.props
     const address = nextProps.location && nextProps.location.address
     const drivers = nextProps.drivers && nextProps.drivers
     const radius = nextProps.radius && nextProps.radius
     let filter_drivers = []
-    console.log("receiver,address",address)
+    console.log("receiver,address", address)
     if (address) {
       geocoder.geocode({
         'address': address
       }, (results, status) => {
         if (status === 'OK') {
           let center = results[0].geometry.location
-          UpdateGeocode(JSON.parse(JSON.stringify(center)),this.props.location._id)
-          .then(response=>{
-            socket.emit("UPDATE")
-            updateGeoCode(response.data.message)
-            this.setState({
-              ...this.state,
-              infor:address
+          UpdateGeocode(JSON.parse(JSON.stringify(center)), this.props.location._id)
+            .then(response => {
+              socket.emit("UPDATE")
+              updateGeoCode(response.data.message)
+              this.setState({
+                ...this.state,
+                infor: address
+              })
             })
-          })
           if (drivers.length > 0) {
             this.filterDriversWithRadius(drivers, radius)
               .then(drivers => {
@@ -81,7 +81,7 @@ class Map extends React.Component {
                         return {
                           ...result,
                           driver,
-                          infor:address
+                          infor: address
                         }
                       })
                       .catch(err => {
@@ -94,7 +94,7 @@ class Map extends React.Component {
                     ...this.state,
                     filter_drivers: [],
                     filter_drivers_with_dist: [],
-                    infor:address
+                    infor: address
                   })
                   return {
                     then: function () { }
@@ -116,7 +116,7 @@ class Map extends React.Component {
                 console.error(err)
               })
           } else {
-              this.setState({...this.state,center,infor:address})
+            this.setState({ ...this.state, center, infor: address })
           }
 
         } else {
@@ -170,8 +170,13 @@ class Map extends React.Component {
     }
   }
   componentDidMount() {
-    const { drivers } = this.props
+    const { drivers, socket, updateDrivers } = this.props
+    const { filter_drivers } = this.state
     const geocoder = new google.maps.Geocoder()
+    socket.on(Socket.Driver.DRIVER_DENIED, (id) => {
+      const new_drivers = filter_drivers.filter(driver => driver._id != id && driver)
+      updateDrivers(new_drivers)
+    })
     this.setState({
       ...this.state,
       center: new google.maps.LatLng({ lat: 10.7625113, lng: 106.6808868 }),
@@ -230,11 +235,11 @@ class Map extends React.Component {
     // updateDrivers(filter_drivers)
   }
   updateDriverPosition(marker, id) {
-    const { drivers, updateDrivers,socket } = this.props
+    const { drivers, updateDrivers, socket } = this.props
     const location = JSON.stringify(marker.latLng)
     UpdateLocation(location, id)
       .then(response => {
-        socket.emit(Socket.Driver.DRIVER_MOVE,response.data.message)
+        socket.emit(Socket.Driver.DRIVER_MOVE, response.data.message)
         let updated_drivers = drivers.map(driver => {
           if (driver._id === id) {
             driver.location = JSON.parse(location)
@@ -259,43 +264,43 @@ class Map extends React.Component {
   onBoundsChanged() {
     const { map, center } = this.state
   }
-  updateInfor(geocoder,location) {
+  updateInfor(geocoder, location) {
     return new Promise((resolve, reject) => {
-      geocoder.geocode({ 'location': location}, function (results, status) {
+      geocoder.geocode({ 'location': location }, function (results, status) {
         if (status === 'OK') {
           if (results[0]) {
             console.log("result0", results[0])
             resolve(results[0].formatted_address)
           } else {
-            console.log("no locaiton found") 
+            console.log("no locaiton found")
           }
         } else {
-          console.log("no locaiton found") 
+          console.log("no locaiton found")
         }
       })
     })
   }
-  onUserMove(marker){
-    const {geocoder}=this.state
-    this.updateInfor(geocoder,marker.latLng)
-    .then(response=>{
-      this.setState({
-        ...this.state,
-        infor:response
+  onUserMove(marker) {
+    const { geocoder } = this.state
+    this.updateInfor(geocoder, marker.latLng)
+      .then(response => {
+        this.setState({
+          ...this.state,
+          infor: response
+        })
       })
-    })
-    .catch(err=>{
-      throw err
-    })
-    console.log("user move",this.props)
+      .catch(err => {
+        throw err
+      })
+    console.log("user move", this.props)
   }
   render() {
-    console.log("this.oldstate",this.state)
+    console.log("this.oldstate", this.state)
     const {
-      center,infor,
+      center, infor,
       filter_drivers,
       filter_drivers_with_dist } = this.state
-    const { radius, closer_driver,showMarker } = this.props
+    const { radius, closer_driver, showMarker } = this.props
     const direct = closer_driver && closer_driver.result
     return (
       <div>
@@ -336,7 +341,7 @@ class Map extends React.Component {
                   : ""
               }
               {
-                radius!=0 && direct ? <DirectionsRenderer
+                radius != 0 && direct ? <DirectionsRenderer
                   directions={direct}
                   options={{
                     suppressMarkers: true
@@ -347,18 +352,18 @@ class Map extends React.Component {
               {
                 showMarker &&
                 <Marker
-                position={center}
-                defaultVisible={true}
-                name="name"
-                icon={{
-                  url: '/image/user.png',
-                  scaledSize: new google.maps.Size(50, 50)
-                }}
-                draggable={true}
-                onDragEnd={this.onUserMove}
-              >
-                <InfoWindow><div>{infor}</div></InfoWindow>
-              </Marker>
+                  position={center}
+                  defaultVisible={true}
+                  name="name"
+                  icon={{
+                    url: '/image/user.png',
+                    scaledSize: new google.maps.Size(50, 50)
+                  }}
+                  draggable={true}
+                  onDragEnd={this.onUserMove}
+                >
+                  <InfoWindow><div>{infor}</div></InfoWindow>
+                </Marker>
               }
             </GoogleMap >
             : <h2>Loading</h2>

@@ -58,15 +58,15 @@ class Routing extends PureComponent {
     }
     socket.emit(Socket.Driver.DRIVER_ACCEPT, payload)
     this.setState({ ...this.state, ask: false })
-    console.log("accept")
   }
   onDenied() {
-    const { socket } = this.state
+    const { socket, driver } = this.state
+    socket.emit(Socket.Driver.DRIVER_DENIED, driver._id)
     this.setState({ ...this.state, ask: false, locater: null, point: null })
-    console.log("denied")
   }
   onHide() {
-    const { socket } = this.state
+    const { socket, driver } = this.state
+    socket.emit(Socket.Driver.DRIVER_DENIED, driver._id)
     this.setState({ ...this.state, point: null, locater: null, ask: false })
   }
   componentDidMount() {
@@ -101,7 +101,7 @@ class Routing extends PureComponent {
     this.dialog = document.getElementById('drawer-routing-example-dialog');
   }
   changeStatus(driver) { this.setState({ ...this.state, isLogged: true, driver }) }
-  updatePoint(point){this.setState({...this.state,point})}
+  updatePoint(point) { this.setState({ ...this.state, point }) }
   updateDriver(driver) { this.setState({ ...this.state, driver }) }
   showDrawer = () => {
     this.setState({ visible: true });
